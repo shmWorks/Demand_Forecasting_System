@@ -1,0 +1,2483 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Methodology: Smart Retail Demand Forecasting</title>
+    <link
+      href="https://fonts.googleapis.com/css2?family=Cormorant:ital,wght@0,400;0,600;1,400&family=IBM+Plex+Sans:wght@300;400;500&display=swap"
+      rel="stylesheet"
+    />
+    <style>
+      /* ===========================================
+           CSS CUSTOM PROPERTIES (THEME)
+           =========================================== */
+      :root {
+        /* Colors — Dark Botanical */
+        --bg-primary: #0f0f0f;
+        --text-primary: #e8e4df;
+        --text-secondary: #9a9590;
+        --accent-warm: #d4a574;
+        --accent-pink: #e8b4b8;
+        --accent-gold: #c9b896;
+
+        /* Typography */
+        --font-display: "Cormorant", serif;
+        --font-body: "IBM Plex Sans", sans-serif;
+        --title-size: clamp(2rem, 5vw, 4rem);
+        --h2-size: clamp(1.5rem, 3.5vw, 2.8rem);
+        --h3-size: clamp(1.2rem, 2.5vw, 1.8rem);
+        --body-size: clamp(0.9rem, 1.5vw, 1.25rem);
+        --small-size: clamp(0.7rem, 1vw, 0.9rem);
+
+        /* Spacing */
+        --slide-padding: clamp(1.5rem, 4vw, 4rem);
+        --content-gap: clamp(1rem, 2.5vh, 2.5rem);
+        --element-gap: clamp(0.5rem, 1vw, 1rem);
+
+        /* Animation */
+        --ease-out-expo: cubic-bezier(0.16, 1, 0.3, 1);
+        --duration-normal: 0.8s;
+      }
+
+      /* ===========================================
+           VIEWPORT FITTING: MANDATORY BASE STYLES
+           =========================================== */
+      html,
+      body {
+        min-height: 100%;
+        overflow-x: hidden;
+        background-color: var(--bg-primary);
+        color: var(--text-primary);
+        font-family: var(--font-body);
+        font-weight: 300;
+      }
+
+      html {
+        scroll-snap-type: y proximity;
+        scroll-behavior: smooth;
+      }
+
+      /* Custom Scrollbar */
+      ::-webkit-scrollbar {
+        width: 6px;
+      }
+      ::-webkit-scrollbar-track {
+        background: var(--bg-primary);
+      }
+      ::-webkit-scrollbar-thumb {
+        background: rgba(212, 165, 116, 0.2);
+        border-radius: 3px;
+      }
+      ::-webkit-scrollbar-thumb:hover {
+        background: var(--accent-warm);
+      }
+
+      /* SVG Interactivity */
+      svg circle,
+      svg path,
+      svg rect {
+        transition:
+          opacity 0.3s ease,
+          transform 0.3s ease;
+      }
+      svg:hover circle {
+        opacity: 1 !important;
+        transform: scale(1.2);
+      }
+
+      .slide {
+        width: 100vw;
+        min-height: 100vh;
+        min-height: 100dvh;
+        scroll-snap-align: start;
+        display: flex;
+        flex-direction: column;
+        position: relative;
+      }
+
+      .slide-content {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        padding: var(--slide-padding);
+        max-width: 1200px;
+        margin: 0 auto;
+        width: 100%;
+        z-index: 2;
+      }
+
+      h1,
+      h2,
+      h3 {
+        font-family: var(--font-display);
+        font-weight: 400;
+        line-height: 1.1;
+        color: var(--accent-warm);
+      }
+      h1 {
+        font-size: var(--title-size);
+      }
+      h2 {
+        font-size: var(--h2-size);
+      }
+      h3 {
+        font-size: var(--h3-size);
+        margin-bottom: 0.5rem;
+      }
+
+      p,
+      li {
+        font-size: var(--body-size);
+        line-height: 1.5;
+        color: var(--text-primary);
+      }
+      .text-secondary {
+        color: var(--text-secondary);
+      }
+
+      .bullet-list {
+        display: flex;
+        flex-direction: column;
+        gap: clamp(0.4rem, 1vh, 1rem);
+        padding-left: 1.5rem;
+        margin-top: var(--content-gap);
+      }
+
+      .bullet-list li::marker {
+        color: var(--accent-warm);
+      }
+
+      img,
+      .image-container {
+        max-width: 100%;
+        max-height: clamp(200px, 45vh, 400px);
+        object-fit: contain;
+      }
+
+      .split-layout {
+        display: flex;
+        flex-direction: row;
+        gap: 2rem;
+        align-items: center;
+        margin-top: var(--content-gap);
+      }
+
+      .split-text {
+        flex: 1;
+      }
+      .split-visual {
+        flex: 1;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+      }
+
+      @media (max-width: 800px) {
+        .split-layout {
+          flex-direction: column;
+          text-align: left;
+          align-items: flex-start;
+        }
+        .split-visual {
+          width: 100%;
+          margin-top: 1rem;
+        }
+      }
+
+      /* Short viewports */
+      @media (max-height: 700px) {
+        :root {
+          --slide-padding: clamp(0.75rem, 3vw, 2rem);
+          --content-gap: clamp(0.4rem, 1.5vh, 1rem);
+        }
+      }
+      @media (prefers-reduced-motion: reduce) {
+        *,
+        *::before,
+        *::after {
+          animation-duration: 0.01ms !important;
+          transition-duration: 0.2s !important;
+        }
+        html {
+          scroll-behavior: auto;
+        }
+      }
+
+      /* ===========================================
+           ANIMATIONS & THEME EFFECTS
+           =========================================== */
+      .reveal {
+        opacity: 0;
+        transform: translateY(30px);
+        transition:
+          opacity var(--duration-normal) var(--ease-out-expo),
+          transform var(--duration-normal) var(--ease-out-expo);
+      }
+      .slide.visible .reveal {
+        opacity: 1;
+        transform: translateY(0);
+      }
+
+      .reveal:nth-child(1) {
+        transition-delay: 0.1s;
+      }
+      .reveal:nth-child(2) {
+        transition-delay: 0.2s;
+      }
+      .reveal:nth-child(3) {
+        transition-delay: 0.3s;
+      }
+      .reveal:nth-child(4) {
+        transition-delay: 0.4s;
+      }
+      .reveal:nth-child(5) {
+        transition-delay: 0.5s;
+      }
+
+      /* Abstract Botanical Shapes (Background) */
+      .bg-shapes {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        pointer-events: none;
+        z-index: 1;
+        overflow: hidden;
+      }
+      .shape-circle-1 {
+        position: absolute;
+        top: -10vh;
+        right: -5vw;
+        width: 40vw;
+        height: 40vw;
+        border-radius: 50%;
+        background: radial-gradient(
+          circle,
+          rgba(212, 165, 116, 0.08) 0%,
+          transparent 70%
+        );
+        filter: blur(30px);
+      }
+      .shape-circle-2 {
+        position: absolute;
+        bottom: -10vh;
+        left: -10vw;
+        width: 30vw;
+        height: 30vw;
+        border-radius: 50%;
+        background: radial-gradient(
+          circle,
+          rgba(232, 180, 184, 0.06) 0%,
+          transparent 70%
+        );
+        filter: blur(40px);
+      }
+      .shape-line {
+        position: absolute;
+        left: 10vw;
+        top: 0;
+        bottom: 0;
+        width: 1px;
+        background: linear-gradient(
+          to bottom,
+          transparent,
+          rgba(212, 165, 116, 0.15),
+          transparent
+        );
+      }
+
+      /* Custom Visual Elements */
+      .visual-box {
+        background: rgba(255, 255, 255, 0.03);
+        border: 1px solid rgba(212, 165, 116, 0.2);
+        padding: 2rem;
+        border-radius: 8px;
+        text-align: center;
+        width: 100%;
+      }
+      .matrix-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr 1fr;
+        gap: 1rem;
+        margin-top: 1rem;
+        font-size: var(--small-size);
+      }
+      .matrix-card {
+        background: rgba(255, 255, 255, 0.02);
+        border-top: 2px solid var(--accent-warm);
+        padding: 1rem;
+      }
+      .matrix-header {
+        font-weight: 500;
+        font-family: var(--font-display);
+        font-size: 1.1em;
+        color: var(--accent-pink);
+        margin-bottom: 0.5rem;
+      }
+
+      .section-tag {
+        display: inline-block;
+        font-size: 0.8rem;
+        text-transform: uppercase;
+        letter-spacing: 2px;
+        color: var(--accent-gold);
+        margin-bottom: 1rem;
+        border-bottom: 1px solid var(--accent-gold);
+        padding-bottom: 0.2rem;
+      }
+
+      /* Progress & Nav */
+      .progress-bar {
+        position: fixed;
+        top: 0;
+        left: 0;
+        height: 3px;
+        background: var(--accent-warm);
+        z-index: 100;
+        transition: width 0.2s;
+        width: 0%;
+      }
+      .nav-dots {
+        position: fixed;
+        right: 2rem;
+        top: 50%;
+        transform: translateY(-50%);
+        display: flex;
+        flex-direction: column;
+        gap: 0.5rem;
+        z-index: 100;
+      }
+      .dot {
+        width: 8px;
+        height: 8px;
+        border-radius: 50%;
+        background: rgba(255, 255, 255, 0.2);
+        cursor: pointer;
+        transition: 0.3s;
+      }
+      .dot.active {
+        background: var(--accent-warm);
+        transform: scale(1.3);
+      }
+
+      .slide-number {
+        position: fixed;
+        bottom: 1.5rem;
+        right: 1.5rem;
+        font-family: var(--font-body);
+        font-size: 0.8rem;
+        color: var(--text-secondary);
+        z-index: 100;
+        opacity: 0.6;
+        user-select: none;
+        letter-spacing: 1px;
+      }
+
+      /* Speaker Sidecar */
+      .speaker-notes {
+        position: fixed;
+        left: -400px;
+        top: 0;
+        width: 320px;
+        height: 100vh;
+        background: rgba(10, 10, 10, 0.98);
+        backdrop-filter: blur(12px);
+        border-right: 1px solid rgba(212, 165, 116, 0.3);
+        z-index: 2000;
+        padding: 2.5rem 1.5rem;
+        transition:
+          left 0.4s var(--ease-out-expo),
+          visibility 0.4s;
+        overflow-y: auto;
+        color: var(--text-primary);
+        visibility: hidden;
+        box-shadow: none;
+      }
+      .speaker-notes.open {
+        left: 0;
+        visibility: visible;
+        box-shadow: 10px 0 50px rgba(0, 0, 0, 0.8);
+      }
+      .notes-header {
+        font-family: var(--font-display);
+        font-size: 1.5rem;
+        color: var(--accent-gold);
+        margin-bottom: 2rem;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        padding-bottom: 1rem;
+      }
+      .notes-speaker-tag {
+        color: var(--accent-pink);
+        font-size: 0.7rem;
+        font-weight: 600;
+        letter-spacing: 2px;
+        text-transform: uppercase;
+        margin-bottom: 0.5rem;
+      }
+      .notes-content {
+        font-size: 0.9rem;
+        line-height: 1.6;
+        color: #bbb;
+      }
+      .notes-cue {
+        color: var(--accent-warm);
+        margin-top: 1.5rem;
+        font-size: 0.85rem;
+        font-weight: 500;
+      }
+      .notes-tip {
+        margin-top: 3rem;
+        padding: 1rem;
+        background: rgba(255, 255, 255, 0.03);
+        border-radius: 4px;
+        font-size: 0.75rem;
+        font-style: italic;
+        color: var(--text-secondary);
+      }
+      .notes-hint {
+        position: fixed;
+        bottom: 1.5rem;
+        left: 1.5rem;
+        font-size: 0.65rem;
+        color: var(--text-secondary);
+        z-index: 100;
+        opacity: 0.3;
+        display: none; /* Completely hidden */
+      }
+      .edit-toggle {
+        position: absolute;
+        top: 1rem;
+        left: 1rem;
+        opacity: 0;
+        pointer-events: none;
+        transition: opacity 0.3s ease;
+        z-index: 10001;
+        background: #fff;
+        border: none;
+        border-radius: 4px;
+        padding: 0.5rem;
+        font-size: 1rem;
+        cursor: pointer;
+        color: #000;
+      }
+      .edit-toggle.show,
+      .edit-toggle.active {
+        opacity: 1;
+        pointer-events: auto;
+      }
+      .edit-mode-active [contenteditable] {
+        outline: 1px dashed var(--accent-gold);
+        background: rgba(255, 255, 255, 0.05);
+      }
+
+      /* Visual Zoom & Blur Overlay */
+      .visual-backdrop {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100vw;
+        height: 100vh;
+        background: rgba(0, 0, 0, 0.75);
+        backdrop-filter: blur(8px);
+        -webkit-backdrop-filter: blur(8px);
+        opacity: 0;
+        pointer-events: none;
+        z-index: 1000;
+        transition: opacity 0.4s var(--ease-out-expo);
+      }
+      .zoomed-slide .visual-backdrop {
+        opacity: 1;
+      }
+      .slide.zoomed-slide {
+        z-index: 50 !important;
+      }
+      .split-visual,
+      .slide-image,
+      .matrix-grid {
+        transition:
+          transform 0.4s var(--ease-out-expo),
+          box-shadow 0.4s var(--ease-out-expo),
+          z-index 0s 0.4s;
+        position: relative;
+        cursor: zoom-in;
+        will-change: transform;
+        backface-visibility: hidden;
+      }
+      .zoomed-visual {
+        z-index: 1001 !important;
+        transition:
+          transform 0.4s var(--ease-out-expo),
+          box-shadow 0.4s var(--ease-out-expo),
+          z-index 0s 0s;
+        box-shadow: 0 10px 40px rgba(0, 0, 0, 0.8);
+        image-rendering: -webkit-optimize-contrast;
+        image-rendering: crisp-edges;
+        image-rendering: pixelated; /* Forces sharp pixels for text clarity */
+        transform: translateZ(0);
+        filter: contrast(1.05) brightness(1.05); /* Slight pop for readability */
+        text-rendering: optimizeLegibility;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="progress-bar" id="progressBar"></div>
+    <nav class="nav-dots" id="navDots"></nav>
+    <div class="slide-number" id="slideNumber">1 / 21</div>
+    <div class="notes-hint">[N] Speaker Notes</div>
+
+    <!-- Speaker Sidecar Drawer -->
+    <aside class="speaker-notes" id="speakerNotes">
+      <div class="notes-header">Speaker Sidecar</div>
+      <div id="activeSpeaker" class="notes-speaker-tag">Speaker</div>
+      <div id="notesBody" class="notes-content">
+        Select a slide to see cues.
+      </div>
+      <div class="notes-tip">
+        <strong>Tip:</strong> Use dual-screen setups to keep these notes on your
+        laptop while presenting the HTML on the main screen.
+      </div>
+    </aside>
+
+    <div class="edit-hotzone"></div>
+    <button class="edit-toggle" id="editToggle" title="Edit mode (E)">
+      ✏️ Toggle Edit
+    </button>
+
+    <!-- Global Background Shapes -->
+    <div class="bg-shapes">
+      <div class="shape-circle-1"></div>
+      <div class="shape-circle-2"></div>
+      <div class="shape-line"></div>
+    </div>
+
+    <!-- === TITLE SLIDE === -->
+    <section class="slide title-slide">
+      <div class="slide-content" style="text-align: center; border-left: none">
+        <div class="reveal section-tag" contenteditable="false">
+          Data Science Semester Project
+        </div>
+        <h1 class="reveal" contenteditable="false">
+          Smart Retail Demand Forecasting with Sales Decomposition and
+          Cannibalization Analysis
+        </h1>
+        <h2
+          class="reveal text-secondary"
+          style="
+            font-size: var(--body-size);
+            margin-top: 1.5rem;
+            font-style: italic;
+          "
+          contenteditable="false"
+        >
+          Methodology & Architectural Decisions • Corporación Favorita
+        </h2>
+      </div>
+    </section>
+
+    <!-- ==========================================
+         SECTION 1: Problem & Architecture Context
+         ========================================== -->
+
+    <!-- Slide 1 -->
+    <section class="slide">
+      <div class="slide-content">
+        <div class="reveal section-tag" contenteditable="false">
+          Section 1: Problem Context
+        </div>
+        <h2 class="reveal" contenteditable="false">
+          Dual Failure Modes in Retail Inventory Management
+        </h2>
+        <div class="split-layout">
+          <div class="split-text reveal">
+            <ul class="bullet-list" contenteditable="false">
+              <li>Overstocking destroys capital and perishables.</li>
+              <li>Understocking causes severe revenue and customer loss.</li>
+              <li>Requires causal market physics, not black-boxes.</li>
+            </ul>
+          </div>
+          <div class="split-visual reveal">
+            <svg viewBox="0 0 400 200" style="width: 100%; max-height: 250px">
+              <!-- Base -->
+              <polygon
+                points="180,180 220,180 200,80"
+                fill="#9a9590"
+                opacity="0.3"
+              />
+              <circle cx="200" cy="80" r="6" fill="#d4a574" />
+              <!-- Beam tipping right -->
+              <line
+                x1="50"
+                y1="50"
+                x2="350"
+                y2="110"
+                stroke="#d4a574"
+                stroke-width="4"
+                stroke-linecap="round"
+              />
+              <!-- Left Tray (Overstocking) -->
+              <line
+                x1="50"
+                y1="50"
+                x2="50"
+                y2="100"
+                stroke="#9a9590"
+                stroke-width="1.5"
+              />
+              <path
+                d="M 20 100 Q 50 120 80 100"
+                fill="#e8b4b8"
+                opacity="0.4"
+                stroke="#e8b4b8"
+                stroke-width="2"
+              />
+              <text
+                x="50"
+                y="140"
+                fill="#e8b4b8"
+                font-size="14"
+                text-anchor="middle"
+                font-family="var(--font-display)"
+              >
+                Overstock
+              </text>
+              <text
+                x="50"
+                y="155"
+                fill="#9a9590"
+                font-size="10"
+                text-anchor="middle"
+              >
+                (Capital Waste)
+              </text>
+              <!-- Right Tray (Understocking) -->
+              <line
+                x1="350"
+                y1="110"
+                x2="350"
+                y2="160"
+                stroke="#9a9590"
+                stroke-width="1.5"
+              />
+              <path
+                d="M 320 160 Q 350 180 380 160"
+                fill="#c9b896"
+                opacity="0.4"
+                stroke="#c9b896"
+                stroke-width="2"
+              />
+              <!-- Heavy Weight on right -->
+              <circle cx="350" cy="155" r="15" fill="#c9b896" opacity="0.9" />
+              <text
+                x="350"
+                y="195"
+                fill="#c9b896"
+                font-size="14"
+                text-anchor="middle"
+                font-family="var(--font-display)"
+              >
+                Understock
+              </text>
+            </svg>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Slide 2 -->
+    <section class="slide">
+      <div class="slide-content">
+        <h2 class="reveal" contenteditable="false">
+          System Dimensionality and Forecasting Scope
+        </h2>
+        <div class="split-layout">
+          <div class="split-text reveal">
+            <ul class="bullet-list" contenteditable="false">
+              <li>3.0 million daily transactional records processed.</li>
+              <li>
+                1,782 independent time-series vectors forecasted globally.
+              </li>
+              <li>Multi-family, multi-store panel regression architecture.</li>
+            </ul>
+          </div>
+          <div class="split-visual reveal">
+            <div class="visual-box" style="padding: 3rem 1rem">
+              <span
+                style="
+                  font-size: 1.5em;
+                  border: 1px solid var(--accent-warm);
+                  padding: 1rem;
+                  display: inline-block;
+                "
+              >
+                3M Records ⨉ 54 Stores ⨉ 33 Families ⨉ 4.5 Years
+              </span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Slide 3 -->
+    <section class="slide">
+      <div class="slide-content">
+        <h2 class="reveal" contenteditable="false">
+          The Governed Data Architecture Pipeline
+        </h2>
+        <ul
+          class="bullet-list reveal"
+          style="max-width: 800px; margin-bottom: 2rem"
+          contenteditable="false"
+        >
+          <li>Six sequential, rigidly governed execution phases.</li>
+          <li>Connects raw ingestion to SHAP auditing.</li>
+          <li>Every architectural node mapped to peer-reviewed literature.</li>
+        </ul>
+        <div class="reveal" style="text-align: center">
+          <img
+            src="Methodology.png"
+            alt="Architecture Flowchart"
+            class="slide-image"
+            style="
+              border-radius: 8px;
+              box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
+            "
+          />
+        </div>
+      </div>
+    </section>
+
+    <!-- ==========================================
+         SECTION 2: Research -> System Mapping
+         ========================================== -->
+
+    <!-- Slide 4: Paper 1 -->
+    <section class="slide">
+      <div class="slide-content">
+        <div class="reveal section-tag" contenteditable="false">
+          Research Insight 1: Cerqueira et al.
+        </div>
+        <h2 class="reveal" contenteditable="false">
+          The Illusion of Time-Series Cross-Validation
+        </h2>
+        <div class="split-layout">
+          <div class="split-text reveal">
+            <ul class="bullet-list" contenteditable="false">
+              <li>Standard validation protocols leak future data.</li>
+              <li>Inflates apparent performance by up to 20%.</li>
+              <li>Destroys integrity of autoregressive feature signals.</li>
+            </ul>
+          </div>
+          <div class="split-visual reveal">
+            <svg viewBox="0 0 400 200" style="width: 100%; max-height: 250px">
+              <text
+                x="40"
+                y="30"
+                fill="#e8b4b8"
+                font-size="12"
+                font-family="var(--font-display)"
+              >
+                ❌ K-Fold (Random Split)
+              </text>
+              <!-- Boxes scattered -->
+              <rect
+                x="40"
+                y="45"
+                width="40"
+                height="20"
+                fill="#9a9590"
+                rx="2"
+                opacity="0.5"
+              />
+              <rect
+                x="90"
+                y="45"
+                width="40"
+                height="20"
+                fill="#e8b4b8"
+                rx="2"
+              />
+              <!-- Leakage! -->
+              <rect
+                x="140"
+                y="45"
+                width="40"
+                height="20"
+                fill="#9a9590"
+                rx="2"
+                opacity="0.5"
+              />
+              <rect
+                x="190"
+                y="45"
+                width="40"
+                height="20"
+                fill="#e8b4b8"
+                rx="2"
+              />
+              <!-- Leakage! -->
+              <text
+                x="135"
+                y="85"
+                fill="#e8b4b8"
+                font-size="10"
+                text-anchor="middle"
+              >
+                Data leakage via backward correlation
+              </text>
+
+              <!-- Divider -->
+              <line
+                x1="20"
+                y1="105"
+                x2="380"
+                y2="105"
+                stroke="rgba(255,255,255,0.1)"
+              />
+
+              <text
+                x="40"
+                y="135"
+                fill="#d4a574"
+                font-size="12"
+                font-family="var(--font-display)"
+              >
+                ✅ Temporal Holdout (TimeSeriesSplit)
+              </text>
+              <!-- Sequential blocks -->
+              <rect
+                x="40"
+                y="150"
+                width="180"
+                height="20"
+                fill="#9a9590"
+                rx="2"
+                opacity="0.5"
+              />
+              <text
+                x="130"
+                y="163"
+                fill="#0f0f0f"
+                font-size="10"
+                text-anchor="middle"
+                font-weight="bold"
+              >
+                Train Partition (Past)
+              </text>
+              <rect
+                x="230"
+                y="150"
+                width="80"
+                height="20"
+                fill="#d4a574"
+                rx="2"
+              />
+              <text
+                x="270"
+                y="163"
+                fill="#0f0f0f"
+                font-size="10"
+                text-anchor="middle"
+                font-weight="bold"
+              >
+                Holdout (Future)
+              </text>
+              <!-- Wall representation -->
+              <line
+                x1="225"
+                y1="120"
+                x2="225"
+                y2="190"
+                stroke="#d4a574"
+                stroke-width="2"
+                stroke-dasharray="4"
+              />
+              <text
+                x="225"
+                y="195"
+                fill="#d4a574"
+                font-size="8"
+                text-anchor="middle"
+              >
+                Impermeable Wall of Time
+              </text>
+            </svg>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Slide 5 -->
+    <section class="slide">
+      <div class="slide-content">
+        <div class="reveal section-tag" contenteditable="false">
+          Application 1
+        </div>
+        <h2 class="reveal" contenteditable="false">
+          The Impermeable Wall of Time
+        </h2>
+        <div class="split-layout">
+          <div class="split-text reveal">
+            <ul class="bullet-list" contenteditable="false">
+              <li>Enforced strict TimeSeriesSplit for validation.</li>
+              <li>Mandated prior shifts before rolling features.</li>
+              <li>Scalers fit exclusively on training rows.</li>
+            </ul>
+            <p
+              class="text-secondary"
+              style="margin-top: 1rem; font-size: 0.8em"
+              contenteditable="false"
+            >
+              Links: [ADR-05, ADR-06, ADR-15]
+            </p>
+          </div>
+          <div class="split-visual reveal">
+            <div
+              class="visual-box"
+              style="border-left: 4px solid var(--accent-pink)"
+            >
+              <div
+                style="
+                  display: flex;
+                  justify-content: space-between;
+                  align-items: center;
+                "
+              >
+                <span style="opacity: 0.7"
+                  >Training Data<br />(Before Aug 16, 2017)</span
+                >
+                <span style="font-size: 2rem">|</span>
+                <span style="opacity: 0.7"
+                  >Holdout Data<br />(Aug 16–31, 2017)</span
+                >
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Slide 6: Paper 2 -->
+    <section class="slide">
+      <div class="slide-content">
+        <div class="reveal section-tag" contenteditable="false">
+          Research Insight 2: Svetunkov & Sroginis
+        </div>
+        <h2 class="reveal" contenteditable="false">
+          The Taxonomy of Zero Demand
+        </h2>
+        <div class="split-layout">
+          <div class="split-text reveal">
+            <ul class="bullet-list" contenteditable="false">
+              <li>Treating all zeros equally poisons lag features.</li>
+              <li>Zero sales rarely mean absolute zero demand.</li>
+              <li>Requires structured disambiguation of sparse records.</li>
+            </ul>
+          </div>
+          <div class="split-visual reveal">
+            <div class="matrix-grid">
+              <div class="matrix-card" style="border-color: #555">
+                Out-of-Stock<br /><small>(True 0)</small>
+              </div>
+              <div class="matrix-card" style="border-color: var(--accent-warm)">
+                Never-Sold<br /><small>(Structural)</small>
+              </div>
+              <div class="matrix-card" style="border-color: var(--accent-pink)">
+                Disruption<br /><small>(Event-Driven)</small>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Slide 7 -->
+    <section class="slide">
+      <div class="slide-content">
+        <div class="reveal section-tag" contenteditable="false">
+          Application 2
+        </div>
+        <h2 class="reveal" contenteditable="false">
+          Event-Driven and Structural Isolation
+        </h2>
+        <div class="split-layout">
+          <div class="split-text reveal">
+            <ul class="bullet-list" contenteditable="false">
+              <li>Retained all zeros to preserve temporal continuity.</li>
+              <li>
+                Explicitly flagged 2016 earthquake as categorical outlier.
+              </li>
+              <li>Protected 365-day rolling statistics from corruption.</li>
+            </ul>
+            <p
+              class="text-secondary"
+              style="margin-top: 1rem; font-size: 0.8em"
+              contenteditable="false"
+            >
+              Links: [ADR-03, ADR-04]
+            </p>
+          </div>
+          <div class="split-visual reveal">
+            <div class="visual-box">
+              <span style="color: var(--text-secondary)"
+                >Raw Zeroes → Filter (Earthquake? Structural?) → Maintain
+                Timesteps</span
+              >
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Slide 8: Paper 3 -->
+    <section class="slide">
+      <div class="slide-content">
+        <div class="reveal section-tag" contenteditable="false">
+          Research Insight 3: Hewage et al.
+        </div>
+        <h2 class="reveal" contenteditable="false">
+          The Complex Promotional Demand Lifecycle
+        </h2>
+        <div class="split-layout">
+          <div class="split-text reveal">
+            <ul class="bullet-list" contenteditable="false">
+              <li>Promotions create stock-piling, uplift, and post-dip.</li>
+              <li>Binary promo flags miss holistic temporal impacts.</li>
+              <li>
+                True lift requires pre-promotion counterfactual baselines.
+              </li>
+            </ul>
+          </div>
+          <div class="split-visual reveal">
+            <svg viewBox="0 0 400 220" style="width: 100%; max-height: 250px">
+              <defs>
+                <linearGradient id="promoGrad" x1="0" y1="0" x2="1" y2="0">
+                  <stop offset="0%" stop-color="#9a9590" />
+                  <stop offset="30%" stop-color="#e8b4b8" />
+                  <stop offset="50%" stop-color="#d4a574" />
+                  <stop offset="70%" stop-color="#e8b4b8" />
+                  <stop offset="100%" stop-color="#9a9590" />
+                </linearGradient>
+              </defs>
+              <!-- Grid lines -->
+              <line
+                x1="30"
+                y1="150"
+                x2="380"
+                y2="150"
+                stroke="rgba(255,255,255,0.2)"
+                stroke-width="2"
+                stroke-dasharray="5,5"
+              />
+              <text x="30" y="145" fill="#9a9590" font-size="10">
+                Baseline Demand
+              </text>
+
+              <!-- Promotion bounding Box -->
+              <rect
+                x="180"
+                y="20"
+                width="60"
+                height="150"
+                fill="rgba(212,165,116,0.05)"
+              />
+              <text
+                x="210"
+                y="15"
+                fill="#d4a574"
+                font-size="10"
+                text-anchor="middle"
+              >
+                Active Promotion Window
+              </text>
+
+              <!-- The Curve -->
+              <path
+                d="M 30 150 C 70 150, 100 150, 120 150 C 140 150, 150 190, 170 190 C 180 190, 190 40, 210 40 C 230 40, 240 190, 250 190 C 270 190, 280 150, 310 150 C 340 150, 380 150, 380 150"
+                fill="none"
+                stroke="url(#promoGrad)"
+                stroke-width="4"
+                stroke-linecap="round"
+              />
+
+              <!-- Labels -->
+              <text
+                x="145"
+                y="210"
+                fill="#e8b4b8"
+                font-size="12"
+                text-anchor="middle"
+                font-family="var(--font-display)"
+              >
+                Pre-Dip
+              </text>
+              <text
+                x="210"
+                y="30"
+                fill="#d4a574"
+                font-size="14"
+                text-anchor="middle"
+                font-weight="bold"
+                font-family="var(--font-display)"
+              >
+                Uplift
+              </text>
+              <text
+                x="260"
+                y="210"
+                fill="#e8b4b8"
+                font-size="12"
+                text-anchor="middle"
+                font-family="var(--font-display)"
+              >
+                Post-Dip
+              </text>
+
+              <!-- Data Points -->
+              <circle cx="160" cy="186" r="4" fill="#e8b4b8" />
+              <circle cx="210" cy="40" r="6" fill="#d4a574" />
+              <circle cx="260" cy="186" r="4" fill="#e8b4b8" />
+            </svg>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Slide 9 -->
+    <section class="slide">
+      <div class="slide-content">
+        <div class="reveal section-tag" contenteditable="false">
+          Application 3
+        </div>
+        <h2 class="reveal" contenteditable="false">
+          Quantifying Cannibalization and Lift
+        </h2>
+        <div class="split-layout">
+          <div class="split-text reveal">
+            <ul class="bullet-list" contenteditable="false">
+              <li>Engineered continuous promo duration and lag features.</li>
+              <li>Constructed 4-week rolling counterfactual baseline.</li>
+              <li>
+                Computed cannibalization using strict negative correlation.
+              </li>
+            </ul>
+            <p
+              class="text-secondary"
+              style="margin-top: 1rem; font-size: 0.8em"
+              contenteditable="false"
+            >
+              Links: [ADR-10, ADR-11, ADR-12]
+            </p>
+          </div>
+          <div class="split-visual reveal">
+            <div class="visual-box">
+              <span
+                style="
+                  display: block;
+                  margin-bottom: 0.5rem;
+                  color: var(--accent-gold);
+                "
+                >Cross-Family Cannibalization Map</span
+              >
+              <div style="font-size: 0.8em; color: var(--text-secondary)">
+                Identifying negative correlations when Target Family is
+                On-Promotion.
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Slide 10: Paper 4 -->
+    <section class="slide">
+      <div class="slide-content">
+        <div class="reveal section-tag" contenteditable="false">
+          Research Insight 4: Karim et al.
+        </div>
+        <h2 class="reveal" contenteditable="false">
+          Gradient Boosting vs Foundation Models
+        </h2>
+        <div class="split-layout">
+          <div class="split-text reveal">
+            <ul class="bullet-list" contenteditable="false">
+              <li>TimeGPT and Chronos excel at zero-shot generalization.</li>
+              <li>Fall short on context-heavy supervised 16-day horizons.</li>
+              <li>Tree models dominate using handcrafted lag features.</li>
+            </ul>
+          </div>
+          <div class="split-visual reveal">
+            <div class="visual-box">
+              <div
+                style="display: grid; grid-template-columns: 1fr 1fr; gap: 4px"
+              >
+                <div
+                  style="
+                    border-right: 1px solid #555;
+                    border-bottom: 1px solid #555;
+                    padding: 1rem;
+                  "
+                >
+                  <small>High Interpretability<br />Low Horizon Acc.</small>
+                </div>
+                <div
+                  style="
+                    border-bottom: 1px solid #555;
+                    padding: 1rem;
+                    color: var(--accent-warm);
+                  "
+                >
+                  <small
+                    >High Interpretability<br />High Horizon Acc.
+                    (<b>GBDT</b>)</small
+                  >
+                </div>
+                <div style="border-right: 1px solid #555; padding: 1rem">
+                  <small>Low Interpretability<br />Low Horizon Acc.</small>
+                </div>
+                <div style="padding: 1rem; color: var(--accent-pink)">
+                  <small
+                    >Low Interpretability<br />Zero-Shot (<b>TimeGPT</b>)</small
+                  >
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Slide 11 -->
+    <section class="slide">
+      <div class="slide-content">
+        <div class="reveal section-tag" contenteditable="false">
+          Application 4
+        </div>
+        <h2 class="reveal" contenteditable="false">
+          Prioritizing Supervised Tree Architectures
+        </h2>
+        <div class="split-layout">
+          <div class="split-text reveal">
+            <ul class="bullet-list" contenteditable="false">
+              <li>Selected LightGBM and XGBoost as primary.</li>
+              <li>
+                Relegated foundation models to future zero-shot baselines.
+              </li>
+              <li>Preserved auditable, feature-driven causal analysis.</li>
+            </ul>
+            <p
+              class="text-secondary"
+              style="margin-top: 1rem; font-size: 0.8em"
+              contenteditable="false"
+            >
+              Links: [ADR-02, ADR-20]
+            </p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Slide 12: Paper 5 -->
+    <section class="slide">
+      <div class="slide-content">
+        <div class="reveal section-tag" contenteditable="false">
+          Research Insight 5: Ozaki et al.
+        </div>
+        <h2 class="reveal" contenteditable="false">
+          Efficiency in Black-Box Optimization
+        </h2>
+        <div class="split-layout">
+          <div class="split-text reveal">
+            <ul class="bullet-list" contenteditable="false">
+              <li>Grid search is computationally prohibitive on ~3M rows.</li>
+              <li>Bayesian TPE samplers find optima 5x faster.</li>
+              <li>
+                Enables multi-objective inventory cost optimization later.
+              </li>
+            </ul>
+          </div>
+          <div class="split-visual reveal">
+            <svg viewBox="0 0 450 200" style="width: 100%; max-height: 250px">
+              <defs>
+                <marker
+                  id="arrow"
+                  viewBox="0 0 10 10"
+                  refX="9"
+                  refY="5"
+                  markerWidth="6"
+                  markerHeight="6"
+                  orient="auto"
+                >
+                  <path d="M 0 0 L 10 5 L 0 10 z" fill="#d4a574" />
+                </marker>
+              </defs>
+              <!-- Grid Search (Left) -->
+              <rect
+                x="0"
+                y="40"
+                width="180"
+                height="140"
+                fill="rgba(255,255,255,0.02)"
+                stroke="#555"
+                rx="4"
+              />
+              <text
+                x="90"
+                y="25"
+                fill="#e8b4b8"
+                font-size="14"
+                text-anchor="middle"
+                font-family="var(--font-display)"
+              >
+                ❌ Grid Search (Exhaustive)
+              </text>
+              <!-- Grid dots -->
+              <g fill="#9a9590" opacity="0.6">
+                <rect x="20" y="60" width="4" height="4" />
+                <rect x="50" y="60" width="4" height="4" />
+                <rect x="80" y="60" width="4" height="4" />
+                <rect x="110" y="60" width="4" height="4" />
+                <rect x="140" y="60" width="4" height="4" />
+                <rect x="20" y="90" width="4" height="4" />
+                <rect x="50" y="90" width="4" height="4" />
+                <rect x="80" y="90" width="4" height="4" />
+                <rect x="110" y="90" width="4" height="4" />
+                <rect x="140" y="90" width="4" height="4" />
+                <rect x="20" y="120" width="4" height="4" />
+                <rect x="50" y="120" width="4" height="4" />
+                <rect x="80" y="120" width="4" height="4" />
+                <rect x="110" y="120" width="4" height="4" />
+                <rect x="140" y="120" width="4" height="4" />
+                <rect x="20" y="150" width="4" height="4" />
+                <rect x="50" y="150" width="4" height="4" />
+                <rect x="80" y="150" width="4" height="4" />
+                <rect x="110" y="150" width="4" height="4" />
+                <rect x="140" y="150" width="4" height="4" />
+              </g>
+              <path
+                d="M 22 62 L 52 62 L 82 62 L 112 62 L 142 62 L 22 92 L 52 92 L 82 92"
+                stroke="#e8b4b8"
+                stroke-width="1.5"
+                fill="none"
+                stroke-dasharray="2"
+                opacity="0.6"
+              />
+              <!-- Optimum point Grid -->
+              <circle cx="112" cy="92" r="5" fill="#d4a574" />
+
+              <!-- Divider -->
+              <line
+                x1="210"
+                y1="20"
+                x2="210"
+                y2="180"
+                stroke="rgba(255,255,255,0.1)"
+              />
+
+              <!-- Bayesian TPE (Right) -->
+              <rect
+                x="240"
+                y="40"
+                width="180"
+                height="140"
+                fill="rgba(255,255,255,0.02)"
+                stroke="#d4a574"
+                rx="4"
+              />
+              <text
+                x="330"
+                y="25"
+                fill="#d4a574"
+                font-size="14"
+                text-anchor="middle"
+                font-weight="bold"
+                font-family="var(--font-display)"
+              >
+                ✅ Bayesian TPE (Convergent)
+              </text>
+              <!-- Scattered scattered prior dots -->
+              <circle cx="260" cy="150" r="3" fill="#9a9590" />
+              <circle cx="390" cy="60" r="3" fill="#9a9590" />
+              <circle cx="300" cy="80" r="3" fill="#9a9590" />
+              <circle cx="270" cy="70" r="3" fill="#9a9590" />
+              <!-- Convergent path to optimum -->
+              <path
+                d="M 260 150 Q 280 80, 300 80 Q 320 80, 350 110"
+                fill="none"
+                stroke="rgba(212,165,116,0.6)"
+                stroke-dasharray="3"
+                stroke-width="2"
+              />
+              <path
+                d="M 350 110 C 360 110, 365 118, 372 113"
+                fill="none"
+                stroke="#d4a574"
+                stroke-width="3"
+                marker-end="url(#arrow)"
+              />
+
+              <!-- Gradient accumulation dots near optimum -->
+              <circle cx="350" cy="110" r="3" fill="#d4a574" opacity="0.5" />
+              <circle cx="365" cy="115" r="4" fill="#d4a574" opacity="0.7" />
+              <!-- Optimum Point Bayesian -->
+              <circle cx="380" cy="110" r="6" fill="#d4a574" />
+              <text
+                x="380"
+                y="95"
+                fill="#d4a574"
+                font-size="10"
+                text-anchor="middle"
+              >
+                Global Optimum
+              </text>
+            </svg>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Slide 13 -->
+    <section class="slide">
+      <div class="slide-content">
+        <div class="reveal section-tag" contenteditable="false">
+          Application 5
+        </div>
+        <h2 class="reveal" contenteditable="false">
+          Scalable Bayesian Hyperparameter Tuning
+        </h2>
+        <div class="split-layout">
+          <div class="split-text reveal">
+            <ul class="bullet-list" contenteditable="false">
+              <li>Deployed Optuna for robust tree model tuning.</li>
+              <li>
+                Searched complex parameter spaces within computation budget.
+              </li>
+              <li>Ensured optimal model fit without data leakage.</li>
+            </ul>
+            <p
+              class="text-secondary"
+              style="margin-top: 1rem; font-size: 0.8em"
+              contenteditable="false"
+            >
+              Links: [ADR-14]
+            </p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Slide 14: Paper 6 -->
+    <section class="slide">
+      <div class="slide-content">
+        <div class="reveal section-tag" contenteditable="false">
+          Research Insight 6: Arboleda-Florez & Castro-Zuluaga
+        </div>
+        <h2 class="reveal" contenteditable="false">
+          Systematizing Auditable Causality
+        </h2>
+        <div class="split-layout">
+          <div class="split-text reveal">
+            <ul class="bullet-list" contenteditable="false">
+              <li>
+                Built-in tree feature importance is mathematically inconsistent.
+              </li>
+              <li>
+                Supply chains require auditable, exact predictive drivers.
+              </li>
+              <li>
+                SHAP uncovers critical non-linear promotional interactions.
+              </li>
+            </ul>
+          </div>
+          <div class="split-visual reveal">
+            <svg viewBox="0 0 400 220" style="width: 100%; max-height: 250px">
+              <defs>
+                <linearGradient id="shapGrad" x1="0" y1="0" x2="1" y2="0">
+                  <stop offset="0%" stop-color="#3b729f" />
+                  <stop offset="100%" stop-color="#d4a574" />
+                </linearGradient>
+              </defs>
+              <!-- Center Line -->
+              <line
+                x1="220"
+                y1="30"
+                x2="220"
+                y2="180"
+                stroke="rgba(255,255,255,0.2)"
+                stroke-dasharray="4"
+              />
+              <text
+                x="220"
+                y="195"
+                fill="#9a9590"
+                font-size="10"
+                text-anchor="middle"
+              >
+                SHAP Value (Impact on Model Output)
+              </text>
+
+              <!-- Feature 1: Promo Duration -->
+              <text
+                x="110"
+                y="65"
+                fill="#e8e4df"
+                font-size="11"
+                text-anchor="end"
+              >
+                Promo Duration
+              </text>
+              <circle cx="320" cy="60" r="3" fill="#d4a574" opacity="0.8" />
+              <circle cx="310" cy="62" r="3" fill="#d4a574" opacity="0.8" />
+              <circle cx="330" cy="58" r="3" fill="#d4a574" opacity="0.8" />
+              <circle cx="280" cy="61" r="3" fill="#d4a574" opacity="0.8" />
+              <circle cx="180" cy="60" r="3" fill="#3b729f" opacity="0.8" />
+              <circle cx="190" cy="59" r="3" fill="#3b729f" opacity="0.8" />
+              <circle cx="170" cy="61" r="3" fill="#3b729f" opacity="0.8" />
+
+              <!-- Feature 2: Payday Event -->
+              <text
+                x="110"
+                y="105"
+                fill="#e8e4df"
+                font-size="11"
+                text-anchor="end"
+              >
+                Payday Event
+              </text>
+              <circle cx="270" cy="100" r="3" fill="#d4a574" opacity="0.8" />
+              <circle cx="280" cy="98" r="3" fill="#d4a574" opacity="0.8" />
+              <circle cx="150" cy="101" r="3" fill="#3b729f" opacity="0.8" />
+              <circle cx="160" cy="100" r="3" fill="#3b729f" opacity="0.8" />
+
+              <!-- Feature 3: Oil Price -->
+              <text
+                x="110"
+                y="145"
+                fill="#e8e4df"
+                font-size="11"
+                text-anchor="end"
+              >
+                WTI Oil Price
+              </text>
+              <circle cx="160" cy="140" r="3" fill="#d4a574" opacity="0.8" />
+              <circle cx="150" cy="142" r="3" fill="#d4a574" opacity="0.8" />
+              <circle cx="250" cy="139" r="3" fill="#3b729f" opacity="0.8" />
+              <circle cx="260" cy="141" r="3" fill="#3b729f" opacity="0.8" />
+              <circle cx="240" cy="140" r="3" fill="#3b729f" opacity="0.8" />
+
+              <!-- Legend -->
+              <text x="330" y="15" fill="#9a9590" font-size="9">Low</text>
+              <rect
+                x="350"
+                y="10"
+                width="20"
+                height="5"
+                fill="url(#shapGrad)"
+              />
+              <text x="375" y="15" fill="#d4a574" font-size="9">
+                High Feature Value
+              </text>
+            </svg>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Slide 15 -->
+    <section class="slide">
+      <div class="slide-content">
+        <div class="reveal section-tag" contenteditable="false">
+          Application 6
+        </div>
+        <h2 class="reveal" contenteditable="false">
+          SHAP-Guided Feature Governance
+        </h2>
+        <div class="split-layout">
+          <div class="split-text reveal">
+            <ul class="bullet-list" contenteditable="false">
+              <li>Implemented exact SHAP TreeExplainer for evaluation.</li>
+              <li>Replaced VIF pruning with SHAP-guided tree pruning.</li>
+              <li>Validated temporal and promotional feature dominance.</li>
+            </ul>
+            <p
+              class="text-secondary"
+              style="margin-top: 1rem; font-size: 0.8em"
+              contenteditable="false"
+            >
+              Links: [ADR-17, ADR-21]
+            </p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ==========================================
+         SECTION 3: ADR Matrix & Defense
+         ========================================== -->
+
+    <!-- Slide 16 -->
+    <section class="slide">
+      <div
+        class="slide-content"
+        style="justify-content: flex-start; padding-top: 10vh"
+      >
+        <div class="reveal section-tag" contenteditable="false">
+          Defensible Architecture
+        </div>
+        <h2 class="reveal" contenteditable="false">
+          Data and Validation Decisions
+        </h2>
+        <div
+          class="matrix-grid reveal"
+          style="
+            grid-template-columns: 1fr 1.5fr 1fr;
+            gap: 1.5rem;
+            margin-top: 2rem;
+          "
+        >
+          <div
+            class="text-secondary"
+            style="border-bottom: 1px solid #333; padding-bottom: 0.5rem"
+          >
+            Component
+          </div>
+          <div
+            class="text-secondary"
+            style="border-bottom: 1px solid #333; padding-bottom: 0.5rem"
+          >
+            Decision
+          </div>
+          <div
+            class="text-secondary"
+            style="border-bottom: 1px solid #333; padding-bottom: 0.5rem"
+          >
+            Avoided Failure Mode
+          </div>
+
+          <div class="matrix-card">Validation [ADR-06]</div>
+          <div class="matrix-card">TimeSeriesSplit over KFold.</div>
+          <div class="matrix-card text-secondary">
+            Prevents 20% validation inflation.
+          </div>
+
+          <div class="matrix-card">Imputation [ADR-13]</div>
+          <div class="matrix-card">Forward-fill oil prices strictly.</div>
+          <div class="matrix-card text-secondary">
+            Preserves chronological market reality.
+          </div>
+
+          <div class="matrix-card">Zeroes [ADR-03]</div>
+          <div class="matrix-card">Retain zeros.</div>
+          <div class="matrix-card text-secondary">
+            Maintains lag feature continuity.
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Slide 17 -->
+    <section class="slide">
+      <div
+        class="slide-content"
+        style="justify-content: flex-start; padding-top: 10vh"
+      >
+        <div class="reveal section-tag" contenteditable="false">
+          Defensible Architecture
+        </div>
+        <h2 class="reveal" contenteditable="false">
+          Feature Engineering Governance
+        </h2>
+        <div
+          class="matrix-grid reveal"
+          style="
+            grid-template-columns: 1fr 1.5fr 1fr;
+            gap: 1.5rem;
+            margin-top: 2rem;
+          "
+        >
+          <div
+            class="text-secondary"
+            style="border-bottom: 1px solid #333; padding-bottom: 0.5rem"
+          >
+            Component
+          </div>
+          <div
+            class="text-secondary"
+            style="border-bottom: 1px solid #333; padding-bottom: 0.5rem"
+          >
+            Decision
+          </div>
+          <div
+            class="text-secondary"
+            style="border-bottom: 1px solid #333; padding-bottom: 0.5rem"
+          >
+            Avoided Failure Mode
+          </div>
+
+          <div class="matrix-card">Rolling Stats [ADR-05]</div>
+          <div class="matrix-card">Strict shift(1) rolling windows.</div>
+          <div class="matrix-card text-secondary">
+            Averts catastrophic target leakage.
+          </div>
+
+          <div class="matrix-card">Promotions [ADR-10]</div>
+          <div class="matrix-card">Numeric promo encoding.</div>
+          <div class="matrix-card text-secondary">
+            Captures lifecycle over binary flags.
+          </div>
+
+          <div class="matrix-card">Holidays [ADR-08]</div>
+          <div class="matrix-card">Excluded transferred holidays.</div>
+          <div class="matrix-card text-secondary">
+            Prevents spurious demand spikes.
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Slide 18 -->
+    <section class="slide">
+      <div
+        class="slide-content"
+        style="justify-content: flex-start; padding-top: 10vh"
+      >
+        <div class="reveal section-tag" contenteditable="false">
+          Defensible Architecture
+        </div>
+        <h2 class="reveal" contenteditable="false">Modeling and Execution</h2>
+        <div
+          class="matrix-grid reveal"
+          style="
+            grid-template-columns: 1fr 1.5fr 1fr;
+            gap: 1.5rem;
+            margin-top: 2rem;
+          "
+        >
+          <div
+            class="text-secondary"
+            style="border-bottom: 1px solid #333; padding-bottom: 0.5rem"
+          >
+            Component
+          </div>
+          <div
+            class="text-secondary"
+            style="border-bottom: 1px solid #333; padding-bottom: 0.5rem"
+          >
+            Decision
+          </div>
+          <div
+            class="text-secondary"
+            style="border-bottom: 1px solid #333; padding-bottom: 0.5rem"
+          >
+            Avoided Failure Mode
+          </div>
+
+          <div class="matrix-card">Model Type [ADR-02]</div>
+          <div class="matrix-card">XGBoost/LightGBM over Foundation.</div>
+          <div class="matrix-card text-secondary">
+            Outperforms at scale locally.
+          </div>
+
+          <div class="matrix-card">Tuning [ADR-14]</div>
+          <div class="matrix-card">Optuna TPE.</div>
+          <div class="matrix-card text-secondary">
+            Avoids prohibitive grid search costs.
+          </div>
+
+          <div class="matrix-card">Scaling [ADR-15]</div>
+          <div class="matrix-card">
+            Scalers fit strictly on train partitions.
+          </div>
+          <div class="matrix-card text-secondary">
+            Prevents statistics leakage.
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Slide 19 -->
+    <section class="slide">
+      <div class="slide-content">
+        <h2 class="reveal" contenteditable="false">
+          The Asymmetric Risk Optimization Mandate
+        </h2>
+        <div class="split-layout">
+          <div class="split-text reveal">
+            <ul class="bullet-list" contenteditable="false">
+              <li>
+                Stockout costs exponentially exceed overstocking capital costs.
+              </li>
+              <li>
+                RMSLE mathematically penalizes under-prediction over
+                over-prediction.
+              </li>
+              <li>
+                Aligns algorithm loss strictly with business inventory risk.
+              </li>
+            </ul>
+            <p
+              class="text-secondary"
+              style="margin-top: 1rem; font-size: 0.8em"
+              contenteditable="false"
+            >
+              Links: [ADR-01]
+            </p>
+          </div>
+          <div class="split-visual reveal">
+            <svg viewBox="0 0 400 220" style="width: 100%; max-height: 250px">
+              <!-- Axes -->
+              <line
+                x1="50"
+                y1="180"
+                x2="380"
+                y2="180"
+                stroke="rgba(255,255,255,0.3)"
+                stroke-width="2"
+              />
+              <line
+                x1="215"
+                y1="30"
+                x2="215"
+                y2="180"
+                stroke="rgba(255,255,255,0.3)"
+                stroke-width="1.5"
+                stroke-dasharray="4"
+              />
+              <line
+                x1="215"
+                y1="180"
+                x2="215"
+                y2="190"
+                stroke="rgba(255,255,255,0.3)"
+                stroke-width="2"
+              />
+
+              <!-- Axis Labels -->
+              <text
+                x="215"
+                y="210"
+                fill="#9a9590"
+                font-size="12"
+                text-anchor="middle"
+              >
+                Forecast Error
+              </text>
+              <text
+                x="130"
+                y="170"
+                fill="#d4a574"
+                font-size="10"
+                text-anchor="middle"
+              >
+                Under-Forecasting (-)
+              </text>
+              <text
+                x="310"
+                y="170"
+                fill="#e8b4b8"
+                font-size="10"
+                text-anchor="middle"
+              >
+                Over-Forecasting (+)
+              </text>
+              <text
+                x="35"
+                y="110"
+                fill="#9a9590"
+                font-size="12"
+                transform="rotate(-90 35,110)"
+                text-anchor="middle"
+              >
+                Loss Penalty
+              </text>
+
+              <!-- RMSE Curve (Symmetric Parabola) -->
+              <path
+                d="M 80 50 Q 215 230 350 50"
+                fill="none"
+                stroke="#e8b4b8"
+                stroke-width="2"
+                stroke-dasharray="4"
+              />
+              <text x="355" y="45" fill="#e8b4b8" font-size="12">
+                RMSE (Symmetric)
+              </text>
+
+              <!-- RMSLE Curve (Asymmetric) -->
+              <path
+                d="M 70 20 Q 215 250 370 120"
+                fill="none"
+                stroke="#d4a574"
+                stroke-width="3"
+                stroke-linecap="round"
+              />
+              <text
+                x="80"
+                y="15"
+                fill="#d4a574"
+                font-size="12"
+                text-anchor="end"
+                font-weight="bold"
+              >
+                RMSLE
+              </text>
+              <text
+                x="80"
+                y="30"
+                fill="#d4a574"
+                font-size="10"
+                text-anchor="end"
+              >
+                (Heavily penalizes
+              </text>
+              <text
+                x="80"
+                y="45"
+                fill="#d4a574"
+                font-size="10"
+                text-anchor="end"
+              >
+                understocking risk)
+              </text>
+            </svg>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ==========================================
+         SECTION 4: Value & Horizon
+         ========================================== -->
+
+    <!-- Slide 20 -->
+    <section class="slide">
+      <div class="slide-content">
+        <div class="reveal section-tag" contenteditable="false">
+          Value Realization
+        </div>
+        <h2 class="reveal" contenteditable="false">
+          Deployed Causal Inference
+        </h2>
+        <div class="split-layout">
+          <div class="split-text reveal">
+            <ul class="bullet-list" contenteditable="false">
+              <li>
+                Transforms black-box predictions into actionable supply-chain
+                engine.
+              </li>
+              <li>
+                Isolates promotional lift from baseline seasonal variance.
+              </li>
+              <li>Identifies exact cross-product cannibalization pairs.</li>
+            </ul>
+          </div>
+          <div class="split-visual reveal">
+            <div class="visual-box" style="padding: 1.5rem; text-align: left">
+              <h4
+                style="
+                  color: var(--accent-warm);
+                  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+                  padding-bottom: 0.5rem;
+                "
+              >
+                Executive Insights
+              </h4>
+              <p style="font-size: 0.8em; margin-top: 0.5rem; color: #ccc">
+                • 16-day forecast horizon strictly validated.
+              </p>
+              <p style="font-size: 0.8em; color: #ccc">
+                • Cross-family cannibalization heatmaps generated dynamically.
+              </p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Slide 21 -->
+    <section class="slide">
+      <div class="slide-content">
+        <div class="reveal section-tag" contenteditable="false">Roadmap</div>
+        <h2 class="reveal" contenteditable="false">
+          System Extensibility and Future Horizons
+        </h2>
+        <ul
+          class="bullet-list reveal"
+          style="max-width: 900px; margin-bottom: 2rem"
+          contenteditable="false"
+        >
+          <li>
+            Weekly retraining cadences prevent probabilistic quantile
+            flip-flopping.
+          </li>
+          <li>
+            Switch-Hurdle models target heavily sparse product categories.
+          </li>
+          <li>
+            Semidefinite programming ensures hierarchical national forecast
+            coherence.
+          </li>
+        </ul>
+        <div
+          class="reveal matrix-grid"
+          style="grid-template-columns: 1fr 1fr 1fr; margin-top: 2rem"
+        >
+          <div
+            class="matrix-card"
+            style="border-top-color: var(--text-secondary)"
+          >
+            <div class="matrix-header" style="color: var(--text-secondary)">
+              Phase 1
+            </div>
+            Current Supervised Trees
+          </div>
+          <div class="matrix-card" style="border-top-color: var(--accent-pink)">
+            <div class="matrix-header" style="color: var(--accent-pink)">
+              Phase 2
+            </div>
+            Intermittent Demand & Hierarchies
+          </div>
+          <div class="matrix-card" style="border-top-color: var(--accent-gold)">
+            <div class="matrix-header" style="color: var(--accent-gold)">
+              Phase 3
+            </div>
+            Foundation Model Evaluations
+          </div>
+        </div>
+        <p
+          class="text-secondary reveal"
+          style="margin-top: 1rem; font-size: 0.8em; text-align: center"
+          contenteditable="false"
+        >
+          Links: [ADR-19, 22, 23]
+        </p>
+      </div>
+    </section>
+
+    <!-- ==========================================
+         JAVASCRIPT LOGIC
+         ========================================== -->
+    <script>
+      class SlidePresentation {
+        constructor() {
+          this.slides = document.querySelectorAll(".slide");
+          this.currentSlide = 0;
+          this.isActive = false; // edit mode tracker
+          this.notesVisible = false;
+
+          // Technical Cues for each slide
+          this.techCues = [
+            {
+              speaker: "Sheraz",
+              notes:
+                "Introduce the project. Highlight Corporación Favorita context. Mention that inventory management is a $1.1T global problem.",
+            },
+            {
+              speaker: "Sheraz",
+              notes:
+                "Explain the 'curse of dimensionality'. 3M rows is just a snapshot. Emphasize the panel-data nature (Store x Family).",
+            },
+            {
+              speaker: "Sheraz",
+              notes:
+                "Briefly walk through the flow (Methodology.png). Every decision here is backed by one of the 6 papers we reviewed.",
+            },
+            {
+              speaker: "Sheraz",
+              notes:
+                "CERQUEIRA. Explain why standard CV (K-Fold) fails for time series. It assumes i.i.d. data, which time series is not.",
+            },
+            {
+              speaker: "Sheraz",
+              notes:
+                "Show the 'August 16' cutoff. This is our non-negotiable anchor point to prevent target leakage.",
+            },
+            {
+              speaker: "Sheraz",
+              notes:
+                "SVETUNKOV. A '0' isn't always zero demand. It could be a stockout or a structural product deletion. Lag features break if you don't handle this.",
+            },
+            {
+              speaker: "Sheraz",
+              notes:
+                "Explain the 2016 earthquake as an 'extraordinary event' that requires specific feature tagging.",
+            },
+            {
+              speaker: "Ayesha",
+              notes:
+                "HEWAGE. This is the 'star' graphic. Explain how sales spike during promo but often dip immediately before and after (pantry loading).",
+            },
+            {
+              speaker: "Ayesha",
+              notes:
+                "Cannibalization: If Milk is on sale, Juice sales might drop. We engineered 4-week window baselines to prove this.",
+            },
+            {
+              speaker: "Ayesha",
+              notes:
+                "KARIM. Why no Foundation Models? They lack 'local context' (local holidays, oil prices) which Trees handle better in supervised settings.",
+            },
+            {
+              speaker: "Ayesha",
+              notes:
+                "Explain model selection: LightGBM for speed/memory, XGBoost for stability. We used both for a robust ensemble check.",
+            },
+            {
+              speaker: "Uma e Rubab",
+              notes:
+                "OZAKI. Grid search is checking every box. TPE (Tree-structured Parzen Estimator) is 'learning' as it searches to find the best params faster.",
+            },
+            {
+              speaker: "Uma e Rubab",
+              notes:
+                "Optuna used to automate this. Mention the 'Computational Budget' constraint—we can't search forever.",
+            },
+            {
+              speaker: "Uma e Rubab",
+              notes:
+                "ARBOLEDA. 'Gini Importance' is biased toward high-cardinality features. SHAP gives mathematically consistent local attributions.",
+            },
+            {
+              speaker: "Uma e Rubab",
+              notes:
+                "Explain the summary plot: Each dot is a prediction. Position on x-axis shows positive/negative impact of that feature.",
+            },
+            {
+              speaker: "Ayesha",
+              notes:
+                "Show ADR-06 as the primary defense. Without proper validation, the 16-day horizon is pure guesswork.",
+            },
+            {
+              speaker: "Ayesha",
+              notes:
+                "Feature governance: 'Transferred Holidays' are the biggest pitfall. We excluded them to keep demand signals clean.",
+            },
+            {
+              speaker: "Ayesha",
+              notes:
+                "Execution: Why partitioning matters for scaling. Fitting scalers on full data is a silent 'cheating' mode in Data Science.",
+            },
+            {
+              speaker: "Uma e Rubab",
+              notes:
+                "RMSLE. Log-transformation handles the scale. Penalty is higher for under-forecasting because stockouts hurt loyal customers.",
+            },
+            {
+              speaker: "Uma e Rubab",
+              notes:
+                "How this becomes a 'Value Engine'. It's not just a model; it's a causal inference tool for marketing (promo lift).",
+            },
+            {
+              speaker: "Uma e Rubab",
+              notes:
+                "Final horizon: Semidefinite programming for hierarchy. Future move to sub-daily retraining.",
+            },
+          ];
+
+          this.setupIntersectionObserver();
+          this.setupKeyboardNav();
+          this.setupTouchNav();
+          this.setupProgressBar();
+          this.setupNavDots();
+          this.setupInlineEditing();
+          this.setupVisualZoom();
+
+          this.goToSlide(0);
+        }
+
+        setupVisualZoom() {
+          // Inject custom blur backdrops into each slide
+          document.querySelectorAll(".slide-content").forEach((content) => {
+            const backdrop = document.createElement("div");
+            backdrop.className = "visual-backdrop";
+            content.appendChild(backdrop);
+          });
+
+          // Select all highest-level visuals
+          const allTargets = Array.from(
+            document.querySelectorAll(
+              ".split-visual, .slide-image, .matrix-grid",
+            ),
+          );
+          const popupVisuals = allTargets.filter(
+            (el) =>
+              !allTargets.some(
+                (parent) => parent !== el && parent.contains(el),
+              ),
+          );
+
+          popupVisuals.forEach((visual) => {
+            visual.addEventListener("mouseenter", () => {
+              if (document.body.classList.contains("edit-mode-active")) return;
+
+              const rect = visual.getBoundingClientRect();
+
+              // Scale origin strictly proportional to window boundaries to eliminate off-screen panning
+              const divX = window.innerWidth - rect.width;
+              const divY = window.innerHeight - rect.height;
+              let oX = divX <= 0 ? 50 : (rect.left / divX) * 100;
+              let oY = divY <= 0 ? 50 : (rect.top / divY) * 100;
+              oX = Math.max(0, Math.min(100, oX));
+              oY = Math.max(0, Math.min(100, oY));
+
+              visual.style.transformOrigin = `${oX}% ${oY}%`;
+
+              // Find the scale needed to cover 70-80% of the screen center
+              const scaleX = (window.innerWidth * 0.75) / rect.width;
+              const scaleY = (window.innerHeight * 0.75) / rect.height;
+              const scale = Math.max(1, Math.min(scaleX, scaleY, 3.5));
+
+              visual.style.transform = `scale(${scale})`;
+              visual.classList.add("zoomed-visual");
+
+              const slide = visual.closest(".slide");
+              if (slide) slide.classList.add("zoomed-slide");
+            });
+
+            visual.addEventListener("mouseleave", () => {
+              visual.style.transform = "";
+              visual.classList.remove("zoomed-visual");
+              const slide = visual.closest(".slide");
+              if (slide) slide.classList.remove("zoomed-slide");
+            });
+          });
+        }
+
+        setupIntersectionObserver() {
+          const observer = new IntersectionObserver(
+            (entries) => {
+              entries.forEach((entry) => {
+                if (entry.isIntersecting) {
+                  entry.target.classList.add("visible");
+                  // Update navigation dots based on the slide currently taking up most of the viewport
+                  const slidesArray = Array.from(this.slides);
+                  const index = slidesArray.indexOf(entry.target);
+                  if (index !== -1) {
+                    this.currentSlide = index;
+                    this.updateNavDots();
+                  }
+                }
+              });
+            },
+            { threshold: 0.6 },
+          );
+
+          this.slides.forEach((slide) => observer.observe(slide));
+        }
+
+        setupKeyboardNav() {
+          document.addEventListener("keydown", (e) => {
+            if (this.isActive && e.target.getAttribute("contenteditable"))
+              return;
+
+            if (e.key === "n" || e.key === "N") {
+              this.toggleNotes();
+              return;
+            }
+
+            if (
+              e.key === "ArrowDown" ||
+              e.key === "ArrowRight" ||
+              e.key === " "
+            ) {
+              e.preventDefault();
+              this.goToSlide(this.currentSlide + 1);
+            } else if (e.key === "ArrowUp" || e.key === "ArrowLeft") {
+              e.preventDefault();
+              this.goToSlide(this.currentSlide - 1);
+            }
+          });
+        }
+
+        toggleNotes() {
+          this.notesVisible = !this.notesVisible;
+          document
+            .getElementById("speakerNotes")
+            .classList.toggle("open", this.notesVisible);
+        }
+
+        setupTouchNav() {
+          let touchStartY = 0;
+          document.addEventListener(
+            "touchstart",
+            (e) => {
+              touchStartY = e.touches[0].clientY;
+            },
+            { passive: true },
+          );
+          document.addEventListener(
+            "touchend",
+            (e) => {
+              const touchEndY = e.changedTouches[0].clientY;
+              if (touchStartY - touchEndY > 50)
+                this.goToSlide(this.currentSlide + 1);
+              else if (touchEndY - touchStartY > 50)
+                this.goToSlide(this.currentSlide - 1);
+            },
+            { passive: true },
+          );
+        }
+
+        setupProgressBar() {
+          this.progressBar = document.getElementById("progressBar");
+          window.addEventListener("scroll", () => {
+            let maxScroll = document.body.scrollHeight - window.innerHeight;
+            let scrollRatio = window.scrollY / maxScroll;
+            if (maxScroll <= 0) scrollRatio = 0;
+            this.progressBar.style.width = scrollRatio * 100 + "%";
+          });
+        }
+
+        setupNavDots() {
+          const container = document.getElementById("navDots");
+          this.slides.forEach((_, i) => {
+            const dot = document.createElement("div");
+            dot.className = "dot";
+            dot.addEventListener("click", () => this.goToSlide(i));
+            container.appendChild(dot);
+          });
+          this.updateNavDots();
+        }
+
+        updateNavDots() {
+          const dots = document.querySelectorAll(".dot");
+          dots.forEach((dot, i) => {
+            dot.classList.toggle("active", i === this.currentSlide);
+          });
+
+          // Dynamic Slide Numbering
+          const slideNum = document.getElementById("slideNumber");
+          if (slideNum) {
+            slideNum.textContent = `${this.currentSlide + 1} / ${this.slides.length}`;
+          }
+
+          // Update Speaker Notes
+          const cue = this.techCues[this.currentSlide];
+          if (cue) {
+            document.getElementById("activeSpeaker").textContent =
+              `Speaker: ${cue.speaker}`;
+            document.getElementById("notesBody").innerHTML =
+              `<div class="notes-cue">Technical Cue:</div>${cue.notes}`;
+          }
+        }
+
+        goToSlide(index) {
+          if (index < 0 || index >= this.slides.length) return;
+          this.currentSlide = index;
+          this.slides[index].scrollIntoView({ behavior: "smooth" });
+        }
+
+        /* Inline Editing logic (Opt-In Feature) */
+        setupInlineEditing() {
+          const editToggle = document.getElementById("editToggle");
+          const hotzone = document.querySelector(".edit-hotzone");
+          let hideTimeout = null;
+
+          const toggleBtnVis = (show) => {
+            if (show) editToggle.classList.add("show");
+            else if (!this.isActive) editToggle.classList.remove("show");
+          };
+
+          hotzone.addEventListener("mouseenter", () => {
+            clearTimeout(hideTimeout);
+            toggleBtnVis(true);
+          });
+          hotzone.addEventListener("mouseleave", () => {
+            hideTimeout = setTimeout(() => toggleBtnVis(false), 400);
+          });
+          editToggle.addEventListener("mouseenter", () =>
+            clearTimeout(hideTimeout),
+          );
+          editToggle.addEventListener("mouseleave", () => {
+            hideTimeout = setTimeout(() => toggleBtnVis(false), 400);
+          });
+
+          hotzone.addEventListener("click", () => this.toggleEditMode());
+          editToggle.addEventListener("click", () => this.toggleEditMode());
+
+          document.addEventListener("keydown", (e) => {
+            if (
+              (e.key === "e" || e.key === "E") &&
+              !(
+                e.target.hasAttribute &&
+                e.target.hasAttribute("contenteditable")
+              )
+            ) {
+              this.toggleEditMode();
+            }
+          });
+
+          // Auto-save edited content to localStorage mechanism
+          this.loadEdits();
+
+          document.addEventListener("input", (e) => {
+            if (e.target.getAttribute("contenteditable") === "true") {
+              // Debounce saving
+              clearTimeout(this.saveTimeout);
+              this.saveTimeout = setTimeout(() => this.saveEdits(), 1000);
+            }
+          });
+        }
+
+        toggleEditMode() {
+          this.isActive = !this.isActive;
+          const editToggle = document.getElementById("editToggle");
+
+          if (this.isActive) {
+            document.body.classList.add("edit-mode-active");
+            editToggle.classList.add("active");
+            editToggle.innerHTML = "💾 Save & Exit Edit";
+
+            document
+              .querySelectorAll("[contenteditable]")
+              .forEach((el) => el.setAttribute("contenteditable", "true"));
+          } else {
+            document.body.classList.remove("edit-mode-active");
+            editToggle.classList.remove("active");
+            editToggle.innerHTML = "✏️ Toggle Edit";
+            document
+              .querySelectorAll("[contenteditable]")
+              .forEach((el) => el.setAttribute("contenteditable", "false"));
+            this.saveEdits();
+          }
+        }
+
+        saveEdits() {
+          const edits = [];
+          // Target elements that are editable and have specific content classes/elements
+          document
+            .querySelectorAll("h1, h2, h3, p, li, .section-tag, .matrix-card")
+            .forEach((el, index) => {
+              edits.push({ index: index, html: el.innerHTML });
+            });
+          localStorage.setItem("presentation_edits", JSON.stringify(edits));
+        }
+
+        loadEdits() {
+          const saved = localStorage.getItem("presentation_edits");
+          if (saved) {
+            try {
+              const edits = JSON.parse(saved);
+              const elements = document.querySelectorAll(
+                "h1, h2, h3, p, li, .section-tag, .matrix-card",
+              );
+              edits.forEach((edit) => {
+                if (elements[edit.index])
+                  elements[edit.index].innerHTML = edit.html;
+              });
+            } catch (e) {
+              console.error("Failed to load edits", e);
+            }
+          }
+        }
+      }
+
+      // Initialize when DOM is ready
+      document.addEventListener("DOMContentLoaded", () => {
+        window.presentation = new SlidePresentation();
+      });
+    </script>
+  </body>
+</html>

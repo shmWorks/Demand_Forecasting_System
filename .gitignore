@@ -1,0 +1,23 @@
+# Data
+data/
+outputs/
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+.venv/
+env/
+venv/
+ENV/
+build/
+dist/
+*.egg-info/
+
+# Jupyter
+.ipynb_checkpoints
+preprocessing_log.txt
+
+# OS
+.DS_Store
+Thumbs.db
