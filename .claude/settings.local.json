@@ -7,7 +7,8 @@
       "Bash(python3 -m scripts \"C:\\\\Users\\\\mypc\\\\Downloads\\\\Retail_Demand_Forecasting\\\\docs\\\\slides.md\")",
       "Bash(python3 -m scripts \"C:\\\\Users\\\\mypc\\\\Downloads\\\\Retail_Demand_Forecasting\\\\docs\\\\Literature_Review_30_Papers.md\")",
       "Bash(python3 -m scripts \"C:\\\\Users\\\\mypc\\\\Downloads\\\\Retail_Demand_Forecasting\\\\docs\\\\Literature_Review_IEEE.md\")",
-      "Bash(python3 -m scripts \"C:\\\\Users\\\\mypc\\\\Downloads\\\\Retail_Demand_Forecasting\\\\CLAUDE.md\")"
+      "Bash(python3 -m scripts \"C:\\\\Users\\\\mypc\\\\Downloads\\\\Retail_Demand_Forecasting\\\\CLAUDE.md\")",
+      "WebSearch"
     ]
   }
 }

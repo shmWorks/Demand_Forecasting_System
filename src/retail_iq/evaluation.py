@@ -109,8 +109,14 @@ def generate_shap_summary(
     """
     import shap  # Lazy import — only paid when this function is called
 
-    explainer = shap.TreeExplainer(model)
-    shap_values = explainer.shap_values(X_test)
+    try:
+        explainer = shap.TreeExplainer(model)
+        shap_values = explainer.shap_values(X_test)
+    except Exception as exc:  # pragma: no cover - backend/version specific
+        # SHAP/XGBoost combo can fail on some builds (base_score parse issue).
+        # Keep evaluation pipeline alive and log actionable hint.
+        logger.warning("generate_shap_summary skipped: %s", exc)
+        return
 
     plt.figure(figsize=(12, 8))
     shap.summary_plot(shap_values, X_test, plot_type="bar", show=False)

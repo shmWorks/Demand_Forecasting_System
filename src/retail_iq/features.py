@@ -146,17 +146,20 @@ class FastFeatureEngineer:
         lags    = lags    or [1, 7, 14, 28]
         windows = windows or [7, 14, 28]
 
-        grouped_sales = self.df.groupby(_SORT_COLS[:2])["sales"]  # store_nbr, family
+        grouped_sales = self.df.groupby(_SORT_COLS[:2], sort=False)["sales"]  # store_nbr, family
+        group_keys = [self.df["store_nbr"], self.df["family"]]
 
         for lag in lags:
             self.df[f"sales_lag_{lag}d"] = grouped_sales.shift(lag)
 
+        sales_shift_1d = grouped_sales.shift(1)
         for window in windows:
-            self.df[f"rolling_mean_{window}d"] = grouped_sales.transform(
-                lambda x: x.shift(1).rolling(window).mean()  # noqa: B023 (closure fine here)
+            roll = sales_shift_1d.groupby(group_keys, sort=False).rolling(window)
+            self.df[f"rolling_mean_{window}d"] = (
+                roll.mean().reset_index(level=[0, 1], drop=True)
             )
-            self.df[f"rolling_std_{window}d"] = grouped_sales.transform(
-                lambda x: x.shift(1).rolling(window).std()   # noqa: B023
+            self.df[f"rolling_std_{window}d"] = (
+                roll.std().reset_index(level=[0, 1], drop=True)
             )
 
         return self
@@ -173,10 +176,16 @@ class FastFeatureEngineer:
         if "onpromotion" not in self.df.columns:
             return self
 
-        grouped = self.df.groupby(_SORT_COLS[:2])["onpromotion"]
-        self.df["onpromotion_lag_1d"]      = grouped.shift(1)
-        self.df["onpromotion_rolling_7d"]  = grouped.transform(
-            lambda x: x.shift(1).rolling(7).mean()
+        grouped = self.df.groupby(_SORT_COLS[:2], sort=False)["onpromotion"]
+        group_keys = [self.df["store_nbr"], self.df["family"]]
+        onpromo_shift_1d = grouped.shift(1)
+        self.df["onpromotion_lag_1d"] = onpromo_shift_1d
+        self.df["onpromotion_rolling_7d"] = (
+            onpromo_shift_1d
+            .groupby(group_keys, sort=False)
+            .rolling(7)
+            .mean()
+            .reset_index(level=[0, 1], drop=True)
         )
         return self
 
