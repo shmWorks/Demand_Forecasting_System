@@ -20,7 +20,9 @@ dependencies = [
     "joblib",
     "flask",
     "tabulate",
-    "pytest"
+    "pytest",
+    "polars",
+    "pyarrow"
 ]
 
 [tool.setuptools.package-dir]
