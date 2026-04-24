@@ -1,18 +1,18 @@
 # 🚀 Retail-IQ: Hyper-Agent Manifest (SPOT v2.0)
 
 > [!IMPORTANT]
-> **AGENT_PROTOCOL**: Read first. Use `[API]` manifest to plan tasks without reading source files. Update `[STATE]` after every major turn.
+> **AGENT_PROTOCOL**: Read first. Use API manifest plan tasks. Read no source files. Update STATE after each major turn.
 
 ## [META]
 
-- **Goal**: Time-series forecasting for Favorita sales using XGBoost.
+- **Goal**: Time-series forecasting for Favorita sales. XGBoost.
 - **Arch**: Modular Python Package (`retail_iq`).
 - **Stack**: Python 3.10, XGBoost, Scikit-learn, Flask.
 
 ## [STATE]
 
 - **PHASE**: 3 (Insight/EDA) -> 4 (Learning/Training)
-- **STATUS**: Dataset refactored, modularized, EDA plots generated.
+- **STATUS**: Dataset refactored. Modularized. EDA plots generated.
 - **ACTIVE_TASK**: Transitioning to model training.
 - **BLOCKERS**: None.
 
@@ -27,16 +27,16 @@
 
 ## [INDEX]
 
-- `data/raw/`: Original Kaggle CSVs (GitIgnored).
+- `data/raw/`: Original Kaggle CSVs. GitIgnored.
 - `notebooks/eda.ipynb`: Interactive analysis driver.
-- `outputs/`: Figures, logs, models (GitIgnored).
+- `outputs/`: Figures, logs, models. GitIgnored.
 - `tests/`: Unit/integration testing suite.
 - `REFLECTIONS.md`: Design logic and lessons.
 - `pyproject.toml`: Package/build configuration.
 
 ## [RULES]
 
-1.  **NO_FLUFF**: Dense reasoning. No conversational filler.
-2.  **API_FIRST**: Use `[API_MANIFEST]` signatures before opening files.
-3.  **PATH_STRICT**: Always use `config.py` constants for file I/O.
-4.  **STATE_UPDATE**: Append task completion to `[STATE]` if phase changes.
+1. **NO_FLUFF**: Dense reasoning. No filler.
+2. **API_FIRST**: Use API_MANIFEST signatures before opening files.
+3. **PATH_STRICT**: Always use `config.py` constants for file I/O.
+4. **STATE_UPDATE**: Append task completion to STATE if phase changes.

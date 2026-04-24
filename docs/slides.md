@@ -1,35 +1,35 @@
 # Presentation Division: Smart Retail Demand Forecasting
 
-Total Slides: 21 | Target: 7 Slides per Person | Focus: 2 Papers per Person
+21 Slides | 7 per Person | 2 Papers per Person
 
 ---
 
-## 1. Sheraz (Slides 1–7)
-**Focus:** Foundations & Methodology Integrity
-- **Slide 1:** Title & Problem Context (Dual Failure Modes)
-- **Slide 2:** System Dimensionality & Scope
-- **Slide 3:** Governed Data Architecture Pipeline
-- **Slide 4:** **Paper 1 (Cerqueira et al.)** - Illusion of Cross-Validation
-- **Slide 5:** Application - The Impermeable Wall of Time
-- **Slide 6:** **Paper 2 (Svetunkov & Sroginis)** - Taxonomy of Zero Demand
-- **Slide 7:** Application - Structural Isolation
+## 1. Sheraz (1–7)
+**Focus:** Foundations & Methodology
+- **1:** Title & Problem (Dual Failure Modes)
+- **2:** System Dimensionality & Scope
+- **3:** Governed Data Pipeline
+- **4:** **Paper 1 (Cerqueira)** - Illusion of Cross-Validation
+- **5:** App - Impermeable Wall of Time
+- **6:** **Paper 2 (Svetunkov & Sroginis)** - Zero Demand Taxonomy
+- **7:** App - Structural Isolation
 
-## 2. Ayesha (Slides 8–11 & 16–18)
+## 2. Ayesha (8–11 & 16–18)
 **Focus:** Dynamics & Rigorous Defense
-- **Slide 8:** **Paper 3 (Hewage et al.)** - Promotional Demand Lifecycle
-- **Slide 9:** Application - Quantifying Cannibalization & Lift
-- **Slide 10:** **Paper 10 (Karim et al.)** - GBDT vs Foundation Models
-- **Slide 11:** Application - Supervised Tree Architectures
-- **Slide 16:** ADR Matrix 1: Data & Validation Decisions
-- **Slide 17:** ADR Matrix 2: Feature Engineering Governance
-- **Slide 18:** ADR Matrix 3: Modeling & Execution
+- **8:** **Paper 3 (Hewage)** - Promotional Demand Lifecycle
+- **9:** App - Quantifying Cannibalization & Lift
+- **10:** **Paper 10 (Karim)** - GBDT vs Foundation Models
+- **11:** App - Supervised Tree Architectures
+- **16:** ADR Matrix 1: Data & Validation
+- **17:** ADR Matrix 2: Feature Governance
+- **18:** ADR Matrix 3: Modeling & Execution
 
-## 3. Uma e Rubab (Slides 12–15 & 19–21)
-**Focus:** Optimization, Clarity & Future Horizon
-- **Slide 12:** **Paper 5 (Ozaki et al.)** - Black-Box Optimization (Bayesian TPE)
-- **Slide 13:** Application - Scalable Hyperparameter Tuning
-- **Slide 14:** **Paper 6 (Arboleda-Florez)** - Auditable Causality (SHAP)
-- **Slide 15:** Application - SHAP-Guided Feature Governance
-- **Slide 19:** Asymmetric Risk Optimization (RMSLE vs RMSE)
-- **Slide 20:** Value Realization: Deployed Causal Inference
-- **Slide 21:** Roadmap: System Extensibility
+## 3. Uma e Rubab (12–15 & 19–21)
+**Focus:** Optimization, Clarity & Future
+- **12:** **Paper 5 (Ozaki)** - Black-Box Optimization (Bayesian TPE)
+- **13:** App - Scalable Hyperparameter Tuning
+- **14:** **Paper 6 (Arboleda-Florez)** - Auditable Causality (SHAP)
+- **15:** App - SHAP-Guided Feature Governance
+- **19:** Asymmetric Risk (RMSLE vs RMSE)
+- **20:** Value: Deployed Causal Inference
+- **21:** Roadmap: System Extensibility

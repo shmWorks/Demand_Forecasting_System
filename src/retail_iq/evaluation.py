@@ -34,10 +34,15 @@ def evaluate_model(
     Returns:
         Dict with keys 'model', 'RMSLE', 'RMSE', 'MAPE', 'R2'.
     """
+    y_true = np.asarray(y_true, dtype=float)
+    y_pred = np.asarray(y_pred, dtype=float)
     y_pred_clipped = np.clip(y_pred, 0, None)
+    y_true_clipped = np.clip(y_true, 0, None)
+    if np.any(y_true < 0):
+        logger.warning("evaluate_model: negative y_true detected; clipping to 0 for RMSLE.")
 
     # RMSLE — primary metric per SPEC (handles zeros, asymmetric penalty)
-    rmsle = float(np.sqrt(np.mean((np.log1p(y_pred_clipped) - np.log1p(y_true)) ** 2)))
+    rmsle = float(np.sqrt(np.mean((np.log1p(y_pred_clipped) - np.log1p(y_true_clipped)) ** 2)))
 
     rmse = float(np.sqrt(mean_squared_error(y_true, y_pred)))
 

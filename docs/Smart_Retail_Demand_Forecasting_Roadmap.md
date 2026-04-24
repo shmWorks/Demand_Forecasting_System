@@ -454,10 +454,10 @@ result = seasonal_decompose(series, model='additive', period=365)
 
 **4.6 — Insights to document (minimum 3):**
 
-- Example: _"BEVERAGES and LIQUOR/WINE/BEER exhibit negative correlation r = −0.48 during `onpromotion > 0` weeks in Store 1, suggesting cannibalization."_
-- Example: _"ACF plot for GROCERY I shows significant autocorrelation at lags 7, 14, and 365, confirming weekly and annual seasonality."_
-- Example: _"National holidays show 31% mean sales lift; regional holidays show only 9% — indicating holiday effect locale-specific, must be encoded with granularity."_
-- Example: _"Oil price dropped 60% between mid-2014 and early-2016; aggregate store sales declined ~8% over same window, suggesting macroeconomic sensitivity."_
+- BEVERAGES and LIQUOR/WINE/BEER exhibit negative correlation r = −0.48 during `onpromotion > 0` weeks in Store 1, suggesting cannibalization.
+- ACF plot for GROCERY I shows significant autocorrelation at lags 7, 14, and 365, confirming weekly and annual seasonality.
+- National holidays show 31% mean sales lift; regional holidays show only 9% — indicating holiday effect locale-specific, must be encoded with granularity.
+- Oil price dropped 60% between mid-2014 and early-2016; aggregate store sales declined ~8% over same window, suggesting macroeconomic sensitivity.
 
 **Common Mistakes to Avoid:**
 
@@ -776,7 +776,7 @@ Create `models/README.md` containing: model name, training date, training data d
 **Final Report Structure:**
 
 | Section | Content |
-|---------|---------|
+|---------|--------|
 | 1. Executive Summary | 1 page: problem, approach, best result, key insight |
 | 2. Dataset Description | Schema, provenance, citation, size |
 | 3. Preprocessing | What was done, why, before/after statistics |
@@ -1008,8 +1008,6 @@ APA format for academic report citations.
 | **No MAPE when actuals ≈ 0** | MAPE undefined or extreme when actual values approach zero; clip or use alternative (SMAPE, RMSE). |
 | **One test set** | Do not tune on test set. Use CV folds on training data for tuning; held-out test set evaluated exactly once. |
 | **Report variance** | Always report CV RMSE as `mean ± std`, not just mean. |
-
----
 
 _Document prepared by: AI Academic Supervisor | Last Updated: March 2026_  
 _Project: Smart Retail Demand Forecasting with Sales Decomposition and Cannibalization Analysis_

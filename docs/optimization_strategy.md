@@ -1,8 +1,9 @@
 # 🚀 1000x Speedup Strategy: Transitioning to JAX + Polars
 
-The intuition is correct: **JAX + Polars** is the "holy grail" stack for 2026 data science pipelines. While NumPy and Pandas are industry standards, they are fundamentally limited by single-threaded execution and eager evaluation. Transitioning to a **Rust-based (Polars)** and **XLA-compiled (JAX)** architecture can realistically achieve 100x-1000x speedups in specific hot-paths.
+Intuition correct. JAX + Polars = holy grail for 2026 data pipelines. NumPy/Pandas limited: single-threaded, eager evaluation. Rust (Polars) + XLA (JAX) = 100x-1000x speedups in hot-paths.
 
 ## 📊 The "1000x" Breakdown
+
 | Component | Current (Pandas/NumPy) | Target (Polars/JAX) | Speedup | Why? |
 | :--- | :--- | :--- | :--- | :--- |
 | **I/O** | `pd.read_csv` | `pl.read_parquet` | ~10x-20x | Arrow-native, multi-threaded I/O. |
@@ -13,9 +14,10 @@ The intuition is correct: **JAX + Polars** is the "holy grail" stack for 2026 da
 ---
 
 ## 🛠 Step 1: Polars for the Data Layer
-Replace the slow, eager Pandas logic with Polars **Lazy API**.
+Replace eager Pandas with Polars **Lazy API**.
 
-### ❌ Before (Pandas)
+### 👎 Before (Pandas)
+
 ```python
 # src/retail_iq/preprocessing.py
 df = pd.read_csv('train.csv')
@@ -24,6 +26,7 @@ df['sales_lag_7d'] = df.groupby(['store_nbr', 'family'])['sales'].shift(7)
 ```
 
 ### ✅ After (Polars)
+
 ```python
 import polars as pl
 
@@ -39,10 +42,11 @@ def load_and_preprocess():
 
 ---
 
-## 🏗 Step 2: Optimizing Feature Engineering
-The current `apply()` for holiday distances is the biggest bottleneck in your `features.py`.
+## 🔥 Step 2: Optimizing Feature Engineering
+Current `apply()` for holiday distances = biggest bottleneck in `features.py`.
 
-### ❌ Before (O(N*M))
+### 👎 Before (O(N*M))
+
 ```python
 self.df['days_to_nearest_holiday'] = self.df['date'].apply(
     lambda d: min([abs((d - h).days) for h in holiday_dates])
@@ -50,7 +54,9 @@ self.df['days_to_nearest_holiday'] = self.df['date'].apply(
 ```
 
 ### ✅ After (O(N log N))
-In Polars, we can use `join_asof` to find the nearest date in a sorted holiday list, which is near-instant.
+
+Use `join_asof` for nearest holiday lookup — near-instant.
+
 ```python
 holidays = pl.from_pandas(holiday_dates).sort('date')
 df = df.join_asof(holidays, on='date', strategy='nearest')
@@ -59,9 +65,10 @@ df = df.join_asof(holidays, on='date', strategy='nearest')
 ---
 
 ## 🧠 Step 3: JAX for High-Performance Modeling
-Your `GD_Linear` in `models.py` is a prime candidate for JAX.
+`GD_Linear` in `models.py` = prime JAX candidate.
 
-### ❌ Before (NumPy)
+### 👎 Before (NumPy)
+
 ```python
 # Single-threaded CPU
 grad = (2/m) * (X.T @ errors) + (self.l2/m) * self.theta
@@ -69,6 +76,7 @@ self.theta -= self.lr * grad
 ```
 
 ### ✅ After (JAX + JIT)
+
 ```python
 import jax
 import jax.numpy as jnp
@@ -84,12 +92,14 @@ def update_step(theta, X, y, lr, l2):
 
 ---
 
-## 🏁 How to reach 1000x?
-1. **GPU Acceleration**: JAX *must* run on a CUDA-enabled GPU. CPU-only JAX is only ~2-5x faster than NumPy.
-2. **Parquet Transition**: CSV is a legacy format. Use `.parquet` with Snappy/Zstd compression for 10x faster loads.
-3. **Lazy Evaluation**: Always use `LazyFrame` in Polars to allow "Predicate Pushdown" (filtering data *before* it's even read into memory).
-4. **Vectorization**: Remove ALL `.apply()` and Python loops. If it can't be done in Polars expressions, use JAX `vmap` to parallelize it.
+## 💪 How to reach 1000x?
+
+1. **GPU Acceleration**: JAX needs CUDA GPU. CPU JAX = only 2-5x faster than NumPy.
+2. **Parquet Transition**: CSV = legacy. Use `.parquet` with Snappy/Zstd = 10x faster loads.
+3. **Lazy Evaluation**: Use `LazyFrame`. Enables Predicate Pushdown — filter before data enters memory.
+4. **Vectorization**: Remove ALL `.apply()` and Python loops. If Polars expressions can't handle it, use JAX `vmap`.
 
 ---
+
 > [!IMPORTANT]
-> **Migration Risk**: Polars uses **1-based** indexing and is **Immutable** by default. JAX is **Functional** (no side effects). You will need to rewrite the core logic, not just swap imports.
+> **Migration Risk**: Polars uses 1-based indexing, immutable by default. JAX = functional (no side effects). Rewrite core logic — not just swap imports.

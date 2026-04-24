@@ -1,7 +1,7 @@
-# 🧠 Retail-IQ Core Wisdom (Compacted)
+# 🧠 Retail-IQ Core Wisdom
 
 <syn id="ARTIFACT-ERR" date="2026-04-20" type="FIX">
-OBJ: Safe document creation.
+OBJ: Safe doc creation.
 CAUSE: `IsArtifact:true` on project paths fails.
 RULE: Use `IsArtifact:true` ONLY for internal brain paths. Project files = `IsArtifact:false`.
 </syn>
@@ -36,5 +36,5 @@ CAUSE: Tracking data/plots = merge conflicts + big history.
 RULE: `git rm --cached` big data/outputs. Add `data/`, `outputs/`, `.venv/` to `.gitignore`.
 
 - `MISTAKE/PREFERENCE`: Consolidated redundant README files into a single source of truth.
-- `WHY`: Duplicate documentation (`README.md` vs `README copy.md`) creates confusion during architectural transitions.
-- `NEW RULE`: Always merge duplicate project documentation immediately after refactoring to ensure a single, professional point of entry.
+- `WHY`: Duplicate documentation creates confusion during architectural transitions.
+- `NEW RULE`: Merge duplicate project documentation immediately after refactoring.

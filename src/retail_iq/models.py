@@ -110,6 +110,15 @@ class GD_Linear:
         Returns:
             self (method chaining).
         """
+        if X.ndim != 2:
+            raise ValueError("X must be 2D array (n_samples, n_features).")
+        if y.ndim != 1:
+            raise ValueError("y must be 1D array (n_samples,).")
+        if X.shape[0] != y.shape[0]:
+            raise ValueError("X and y must have same number of samples.")
+        if X.shape[0] == 0:
+            raise ValueError("X and y must be non-empty.")
+
         np.random.seed(self.random_state)
         self.loss_history = []
 
@@ -210,4 +219,12 @@ class SeasonalNaive:
         """
         if "sales" not in df.columns:
             raise ValueError("DataFrame must contain 'sales' column.")
+        if "date" in df.columns and pd.api.types.is_datetime64_any_dtype(df["date"]):
+            result = pd.Series(index=df.index, dtype=float)
+            for _, grp in df.groupby(["store_nbr", "family"], sort=False):
+                g = grp.sort_values("date")
+                lookup = pd.Series(g["sales"].to_numpy(), index=g["date"])
+                target_dates = g["date"] - pd.Timedelta(days=self.period)
+                result.loc[g.index] = target_dates.map(lookup)
+            return result
         return df.groupby(["store_nbr", "family"])["sales"].shift(self.period)

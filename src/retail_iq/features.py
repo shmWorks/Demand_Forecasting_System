@@ -194,8 +194,18 @@ class FastFeatureEngineer:
                 self.df = self.df.merge(self.oil_price, on="date", how="left")
 
         if "dcoilwtico" in self.df.columns:
-            self.df["dcoilwtico_lag_7d"]       = self.df["dcoilwtico"].shift(7)
-            self.df["dcoilwtico_rolling_28d"]  = self.df["dcoilwtico"].shift(1).rolling(28).mean()
+            # Oil is market-level signal by date. Compute lag/rolling on unique date series,
+            # then map back by date to avoid row-based leakage across store/family duplicates.
+            oil_by_date = (
+                self.df[["date", "dcoilwtico"]]
+                .drop_duplicates(subset=["date"])
+                .sort_values("date")
+                .set_index("date")["dcoilwtico"]
+            )
+            oil_lag_7d = oil_by_date.shift(7)
+            oil_roll_28d = oil_by_date.shift(1).rolling(28).mean()
+            self.df["dcoilwtico_lag_7d"] = self.df["date"].map(oil_lag_7d)
+            self.df["dcoilwtico_rolling_28d"] = self.df["date"].map(oil_roll_28d)
 
         return self
 

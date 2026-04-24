@@ -1,86 +1,93 @@
 # CLAUDE.md
 
-Claude Code guidance for this repo.
+Project Overview
 
-## Project Overview
+Retail-IQ = ML sales forecasting for retail time-series. Favorita store sales data. XGBoost + Optuna tuning, SHAP evaluation, cannibalization analysis.
 
-Retail-IQ = ML sales forecasting for retail time-series. XGBoost on Favorita store sales data.
-
-## Setup Commands
+## Setup
 
 ```bash
-# Create and activate environment
 uv venv
 source .venv/bin/activate  # Windows: .venv\Scripts\activate
-
-# Install package in editable mode
 uv pip install -e .
-
-# Run tests (when tests/ exists)
 pytest tests/
 ```
 
 ## Architecture
 
 ```
-src/retail_iq/           # Core Python package
-├── config.py             # Path constants (PROJECT_ROOT, DATA_DIR, OUTPUT_DIR, etc.)
-├── preprocessing.py      # Data loading, merging, outlier detection
-├── features.py           # FastFeatureEngineer class for feature pipeline
-└── visualization.py       # Plotting utilities (decomposition, heatmaps, distributions)
+src/retail_iq/           # All logic here — NOT in notebooks
+├── config.py             # Path constants (always use for I/O)
+├── preprocessing.py      # load, merge, clean, outlier detection
+├── features.py           # FastFeatureEngineer (fluent API)
+├── models.py             # GD_Linear (JAX/NumPy), SeasonalNaive
+├── evaluation.py         # metrics, SHAP, residual analysis
+└── visualization.py      # plotting utilities
+
+notebooks/                # Clean drivers only — no inline logic
 ```
 
-**Key principle**: Notebooks (`notebooks/eda.ipynb`) = clean drivers only. All logic in `src/retail_iq/`.
+## Key Constraints
 
-## Core Modules
+1. **PATH_STRICT**: All I/O via `config.py` constants. Never hardcode.
+2. **ANTI_LEAKAGE**: Rolling features use `.shift(1).rolling(w)`. Scaler fit on train only.
+3. **TEMPORAL_HOLDOUT**: Train < 2017-08-16, Test = 2017-08-16 to 2017-08-31. No shuffle.
+4. **FROM_SCRATCH**: GD_Linear = NumPy only. No sklearn.LinearRegression.
+5. **ZERO_RETENTION**: Never impute/remove zero sales rows.
+6. **SEED_LOCK**: random_state=42 everywhere.
+7. **CV_TEMPORAL**: TimeSeriesSplit(n_splits≥3). KFold(shuffle=True) forbidden.
+8. **API_REUSE**: FastFeatureEngineer fluent API. Chain methods. No inline feature code in notebooks.
 
-### config.py
+## Core APIs
 
-Path constants via Pathlib. **Always use for I/O** — never hardcode.
-
-- `PROJECT_ROOT`, `DATA_DIR`, `RAW_DATA_DIR`, `PROCESSED_DATA_DIR`
-- `OUTPUT_DIR`, `PLOT_DIR`, `MODEL_DIR`, `LOG_DIR`
-
-### preprocessing.py
-
-- `load_raw_data()` — loads train, test, stores, oil, holidays, transactions CSVs
-- `merge_datasets(train, stores, oil, holidays, transactions)` — joins all sources
-- `detect_outliers_iqr(df)` — IQR outlier flag by store/family
-
-### features.py: FastFeatureEngineer
-
-Fluent API for feature engineering. Chain methods:
+### FastFeatureEngineer (features.py)
 
 ```python
-fe = FastFeatureEngineer(df, transactions=tx_df, oil_price=oil_df, holidays=hol_df, store_meta=stores_df)
+fe = FastFeatureEngineer(df, transactions=tx_df, oil_price=oil_df,
+                         holidays=hol_df, store_meta=stores_df)
 fe.add_temporal_features()
-fe.add_lag_and_rolling(lags=[1,7,14], windows=[7,14,28])
+fe.add_lag_and_rolling(lags=[1,7,14,365], windows=[7,14,28])
 fe.add_transaction_features()
 fe.add_macroeconomic_features()
+fe.add_store_metadata()
+fe.add_cannibalization_features()
 df = fe.transform()
 ```
 
-Methods: `add_temporal_features()`, `add_lag_and_rolling()`, `add_onpromotion_features()`, `add_macroeconomic_features()`, `add_transaction_features()`, `add_store_metadata()`, `add_cannibalization_features()`
+Sort invariant: `self.df` sorted by `[store_nbr, family, date]` once in `__init__`. No `add_*` method may re-sort.
 
-### visualization.py
+### Models (models.py)
 
-- `plot_ts_decomposition(df, store_nbr, family)` — seasonal decomposition
-- `plot_correlation_heatmap(df)` — feature correlation
-- `plot_sales_distribution(df)` — sales histogram
+- `GD_Linear`: Gradient descent linear regression. JAX backend (auto-falls back to NumPy). L1+L2 in gradient. `fit(X, y)` with log1p target. `predict(X)`.
+- `SeasonalNaive`: Persistence baseline. `predict(df)` returns `groupby(['store_nbr','family'])['sales'].shift(365)`.
 
-## Data
+### Config (config.py)
 
-- `data/raw/` — original CSVs (gitignored)
-- `data/processed/` — cleaned/featured datasets (gitignored)
-- `outputs/plots/`, `outputs/models/`, `outputs/logs/` — artifacts (gitignored)
+```python
+from retail_iq.config import PROJECT_ROOT, DATA_DIR, RAW_DATA_DIR, PROCESSED_DATA_DIR
+from retail_iq.config import PARQUET_DATA_DIR, OUTPUT_DIR, PLOT_DIR, MODEL_DIR
+```
+
+`PARQUET_DATA_DIR` = fast Polars I/O path. Run `scripts/convert_to_parquet.py` once to convert CSVs.
+
+Performance guards: `SAMPLE_N_CORR=50_000`, `SAMPLE_N_DIST=100_000` — max rows for plots.
+
+## Cannibalization Analysis (SPEC §B, §STAGE_8)
+
+```python
+# Find cannibal pairs
+find_cannibal_pairs(df, promo_threshold=0, corr_threshold=-0.35)
+
+# Compute promotional lift
+compute_promo_lift(df, window_pre=28)
+```
+
+## Cursor Rules
+
+`.cursor/rules/always-caveman-style.mdc` forces caveman response style (terse, no fluff). Always active. Code/commits unaffected.
 
 ## Development Rules
 
-1. **PATH_STRICT**: Use `config.py` constants for all file I/O
-2. **MODULAR_ML**: Logic in `src/retail_iq/`, not notebooks
-3. **NO_FLUFF**: Dense reasoning, no conversational filler
-4. Sync `requirements.txt` and `pyproject.toml` before installing deps
-
-## Tech Stack
-
-pandas, numpy, matplotlib, seaborn, scikit-learn, statsmodels, xgboost, flask
+- Logic in `src/retail_iq/`, not notebooks.
+- Sync `requirements.txt` and `pyproject.toml` before installing deps.
+- notebooks/ = clean drivers only. Atomic rerun by cell.

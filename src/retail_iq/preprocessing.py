@@ -74,7 +74,11 @@ def preprocess_dates(dfs: List[pd.DataFrame]) -> List[pd.DataFrame]:
     for df in dfs:
         if "date" in df.columns and not pd.api.types.is_datetime64_any_dtype(df["date"]):
             df = df.copy()
-            df["date"] = pd.to_datetime(df["date"])
+            raw = df["date"]
+            df["date"] = pd.to_datetime(df["date"], errors="coerce")
+            invalid_count = int(df["date"].isna().sum() - raw.isna().sum())
+            if invalid_count > 0:
+                logger.warning("preprocess_dates: coerced %d invalid date values to NaT", invalid_count)
         result.append(df)
     return result
 

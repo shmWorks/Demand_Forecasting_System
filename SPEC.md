@@ -1,5 +1,45 @@
 # SPEC.md — Retail-IQ
 
+## G Goal
+- Build stable, fast demand forecast pipeline.
+- Cut crash, leakage, compute waste.
+- Same on Windows + Kaggle + Colab.
+- Keep reproducible, auditable, business-ready.
+
+## C Constraints
+- No temporal leakage. Time-order strict.
+- Keep zero sales rows.
+- Low RAM, bounded CPU/GPU.
+- Prefer `src/retail_iq` over notebook duplication.
+- Atomic rerun by cell.
+
+## I Inputs
+- Favorita dataset files.
+- Roadmap, proposal, slides.
+- `src/retail_iq`, `notebooks`, `scripts`, tests.
+
+## V Invariants
+- V1: Split/train/eval preserve time direction.
+- V2: No cross-time leakage in features.
+- V3: No synthetic row explosion.
+- V4: Deps align across `pyproject.toml` and `requirements.txt`.
+- V5: Cells single-purpose, restart-safe.
+- V6: Seed + config path deterministic.
+
+## T Tasks
+- T1: Audit findings register (severity-ranked).
+- T2: Stabilize — fix crashers, correctness bugs.
+- T3: Optimize — fewer copies, dtype bloat, wasteful loops.
+- T4: Refactor — split into atomic script-backed cells.
+- T5: Portability — harden bootstrap, imports, deps.
+- T6: Verify — tests, smoke, lint.
+
+## B Backprop Bug Log
+- B1: Memory blowup from data replication path.
+- B2: Eval split might produce invalid/empty slice.
+- B3: Lag feature leakage risk needs strict guard.
+- B4: Dependency drift blocks hosted fast paths.
+
 ## [CURRENT_STATE]
 
 status: ALL_PHASES_COMPLETE
@@ -9,8 +49,6 @@ models.py (GD_Linear, SeasonalNaive), evaluation.py,
 notebooks/eda.ipynb, baseline_models.ipynb, advanced_models.ipynb,
 evaluation.ipynb, cannibalization.ipynb
 next: EXECUTE_NOTEBOOKS → GENERATE_REPORTS → SUBMIT
-
----
 
 ## [CHECKPOINT_LOG]
 
@@ -22,8 +60,6 @@ next: EXECUTE_NOTEBOOKS → GENERATE_REPORTS → SUBMIT
 | 2026-04-20 | 7     | DONE — Evaluation + SHAP framework            |
 | 2026-04-20 | 8     | DONE — Cannibalization analysis               |
 | NEXT       | 9     | Finalize best model, generate reports, submit |
-
----
 
 ## [API_INDEX]
 
@@ -51,8 +87,6 @@ __init__(df, transactions=None, oil_price=None, holidays=None, store_meta=None)
 .add_cannibalization_features(top_n=3) -> self  # cross-family corr, adds top_corr_mean
 .transform() -> DataFrame
 ```
-
----
 
 ## [NEXT_STAGES]
 
@@ -117,8 +151,6 @@ checklist:
 - notebook Restart & Run All → zero errors
 - export HTML/PDF ≤20MB
 
----
-
 ## [CONSTRAINTS]
 
 1. PATH_STRICT: All I/O via config.py constants. Never hardcode paths.
@@ -131,8 +163,6 @@ checklist:
 8. API_REUSE: Use FastFeatureEngineer fluent API. Chain methods. No inline feature code in notebooks.
 9. CV_TEMPORAL: TimeSeriesSplit(n_splits≥3). KFold(shuffle=True) explicitly forbidden.
 10. METRIC_PRIMARY: RMSLE (handles zeros, asymmetric penalty). MAPE secondary (exclude zero actuals).
-
----
 
 ## [CRITICAL_IMPLEMENTATIONS]
 
@@ -196,12 +226,10 @@ def compute_promo_lift(df, window_pre=28):
     return promo_events
 ```
 
----
-
 ## [FILE_MANIFEST]
 
 src/retail_iq/
-├── **init**.py # Package marker
+├── __init__.py # Package marker
 ├── config.py # PATH constants — DONE
 ├── preprocessing.py # load, merge, clean, outlier — DONE
 ├── features.py # FastFeatureEngineer — DONE
@@ -228,20 +256,6 @@ outputs/
 ├── eda/ # 10+ figures from EDA
 ├── plots/ # model comparison, residuals, SHAP
 └── reports/ # cannibalization_report.md
-
----
-
-## [CHECKPOINT_LOG]
-
-| Date       | Phase | Status                                         |
-| ---------- | ----- | ---------------------------------------------- |
-| 2026-04-20 | 1-4   | DONE — Core modules, EDA complete              |
-| NEXT       | 5     | Baseline modeling — Seasonal Naive + GD_Linear |
-| NEXT       | 6     | Advanced models + Optuna tuning                |
-| NEXT       | 7     | Evaluation + SHAP analysis                     |
-| NEXT       | 8     | Cannibalization analysis + final report        |
-
----
 
 ## [REPRODUCIBILITY]
 

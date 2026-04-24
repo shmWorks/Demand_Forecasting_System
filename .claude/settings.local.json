@@ -1,0 +1,13 @@
+{
+  "permissions": {
+    "allow": [
+      "Read(//c/Users/mypc/.claude/plugins/cache/caveman/caveman/84cc3c14fa1e/skills/compress/**)",
+      "Bash(python3 -m scripts \"C:\\\\Users\\\\mypc\\\\Downloads\\\\Retail_Demand_Forecasting\\\\README.md\")",
+      "Bash(python3 -m scripts \"C:\\\\Users\\\\mypc\\\\Downloads\\\\Retail_Demand_Forecasting\\\\REFLECTIONS.md\")",
+      "Bash(python3 -m scripts \"C:\\\\Users\\\\mypc\\\\Downloads\\\\Retail_Demand_Forecasting\\\\docs\\\\slides.md\")",
+      "Bash(python3 -m scripts \"C:\\\\Users\\\\mypc\\\\Downloads\\\\Retail_Demand_Forecasting\\\\docs\\\\Literature_Review_30_Papers.md\")",
+      "Bash(python3 -m scripts \"C:\\\\Users\\\\mypc\\\\Downloads\\\\Retail_Demand_Forecasting\\\\docs\\\\Literature_Review_IEEE.md\")",
+      "Bash(python3 -m scripts \"C:\\\\Users\\\\mypc\\\\Downloads\\\\Retail_Demand_Forecasting\\\\CLAUDE.md\")"
+    ]
+  }
+}

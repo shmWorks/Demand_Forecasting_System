@@ -427,13 +427,12 @@ class TestAdversarialBreakage:
     These are expected to fail (or expose bugs) given the current implementation.
     """
 
-    @pytest.mark.xfail(strict=True, raises=Exception, reason="BLINDSPOT: preprocess_dates crashes on garbage strings without errors='coerce'")
     def test_preprocess_dates_garbage_crash(self):
         df = pd.DataFrame({'date': ['2017-01-01', 'not-a-date', 'Q1-2017']})
-        # This will crash with a ParserError or ValueError instead of handling it gracefully.
-        preprocessing.preprocess_dates([df])
+        processed = preprocessing.preprocess_dates([df])[0]
+        assert pd.api.types.is_datetime64_any_dtype(processed["date"])
+        assert processed["date"].isna().sum() == 2
 
-    @pytest.mark.xfail(strict=True, reason="BLINDSPOT: add_macroeconomic_features shifts rows, not dates, causing data leakage across stores/families")
     def test_macroeconomic_leakage_across_groups(self):
         # 8 rows: Alternating Store 1 and Store 2 over 4 dates.
         df = pd.DataFrame({
@@ -447,9 +446,8 @@ class TestAdversarialBreakage:
         transformed = fe.add_macroeconomic_features().transform()
 
         val = transformed['dcoilwtico_lag_7d'].iloc[7]
-        assert pd.isna(val), f"Leakage occurred! 7-day lag got value {val} from a different store/date instead of NaN!"
+        assert pd.isna(val), f"Leakage occurred! 7-day lag got value {val} instead of NaN!"
 
-    @pytest.mark.xfail(strict=True, reason="BLINDSPOT: SeasonalNaive shift(365) shifts rows, ignoring missing dates")
     def test_seasonal_naive_missing_dates(self):
         df = pd.DataFrame({
             'date': pd.to_datetime(['2017-01-01', '2017-01-05']),
@@ -461,7 +459,6 @@ class TestAdversarialBreakage:
         preds = model.predict(df)
         assert pd.isna(preds.iloc[1]), "Time-blindness: Model shifted a row instead of a calendar day!"
 
-    @pytest.mark.xfail(strict=True, reason="BLINDSPOT: RMSLE evaluation fails catastrophically on negative true values")
     def test_evaluate_negative_sales_crash(self):
         y_true = np.array([10.0, -5.0])
         y_pred = np.array([10.0, 0.0])
@@ -469,9 +466,9 @@ class TestAdversarialBreakage:
         metrics = evaluation.evaluate_model(y_true, y_pred, "Test")
         assert not np.isnan(metrics['RMSLE']), "RMSLE evaluated to NaN due to negative truths!"
 
-    @pytest.mark.xfail(strict=True, raises=ZeroDivisionError, reason="BLINDSPOT: GD_Linear ZeroDivisionError on empty dataframe")
     def test_gd_linear_empty_world(self):
         X = np.empty((0, 3))
         y = np.empty((0,))
         model = models.GD_Linear()
-        model.fit(X, y)
+        with pytest.raises(ValueError, match="non-empty"):
+            model.fit(X, y)
