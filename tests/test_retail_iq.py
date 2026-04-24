@@ -82,6 +82,13 @@ class TestConfig:
         assert config.DATA_DIR.exists()
         assert config.OUTPUT_DIR.exists()
 
+    def test_set_global_seed_reproducible_numpy(self):
+        config.set_global_seed(42)
+        arr1 = np.random.rand(5)
+        config.set_global_seed(42)
+        arr2 = np.random.rand(5)
+        np.testing.assert_allclose(arr1, arr2)
+
 # ==========================================
 # PREPROCESSING TESTS
 # ==========================================
@@ -151,6 +158,23 @@ class TestPreprocessing:
         df = pd.DataFrame({'store_nbr': [1], 'family': ['A']})
         outlier_df = preprocessing.detect_outliers_iqr(df)
         assert not outlier_df['is_outlier'].any()
+
+    def test_strict_temporal_holdout_split_15_days(self):
+        dates = pd.date_range("2017-07-01", periods=31, freq="D")
+        df = pd.DataFrame({
+            "date": dates,
+            "store_nbr": [1] * len(dates),
+            "family": ["A"] * len(dates),
+            "sales": np.arange(len(dates), dtype=float),
+        })
+        train_df, test_df = preprocessing.strict_temporal_holdout_split(df, holdout_days=15)
+        assert len(test_df["date"].dt.normalize().unique()) == 15
+        assert train_df["date"].max() < test_df["date"].min()
+
+    def test_strict_temporal_holdout_split_invalid_days(self):
+        df = pd.DataFrame({"date": pd.date_range("2017-01-01", periods=5), "sales": [1, 2, 3, 4, 5]})
+        with pytest.raises(ValueError, match="holdout_days must be > 0"):
+            preprocessing.strict_temporal_holdout_split(df, holdout_days=0)
 
 # ==========================================
 # FEATURES TESTS (FastFeatureEngineer)

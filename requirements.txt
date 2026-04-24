@@ -12,3 +12,5 @@ joblib
 flask
 tabulate
 pytest
+polars
+pyarrow

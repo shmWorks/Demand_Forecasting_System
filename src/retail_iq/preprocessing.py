@@ -181,3 +181,41 @@ def detect_outliers_iqr(
 
     df["is_outlier"] = df["sales"] > (q3 + iqr_multiplier * iqr)
     return df
+
+
+def strict_temporal_holdout_split(
+    df: pd.DataFrame,
+    date_col: str = "date",
+    holdout_days: int = 15,
+    end_date: pd.Timestamp | None = None,
+) -> tuple[pd.DataFrame, pd.DataFrame]:
+    """Split by strict calendar holdout window with no temporal leakage.
+
+    Test window is inclusive [end_date - (holdout_days - 1), end_date].
+    Train contains rows strictly before test_start.
+    """
+    if date_col not in df.columns:
+        raise ValueError(f"Missing date column: {date_col}")
+    if holdout_days <= 0:
+        raise ValueError("holdout_days must be > 0")
+
+    data = df.copy()
+    if not pd.api.types.is_datetime64_any_dtype(data[date_col]):
+        data[date_col] = pd.to_datetime(data[date_col], errors="coerce")
+    if data[date_col].isna().all():
+        raise ValueError("All date values are invalid/NaT; cannot split.")
+
+    split_end = pd.Timestamp(end_date) if end_date is not None else pd.Timestamp(data[date_col].max())
+    split_start = split_end - pd.Timedelta(days=holdout_days - 1)
+
+    train_df = data[data[date_col] < split_start]
+    test_df = data[(data[date_col] >= split_start) & (data[date_col] <= split_end)]
+
+    if train_df.empty:
+        raise ValueError("Temporal holdout produced empty train split.")
+    if test_df.empty:
+        raise ValueError("Temporal holdout produced empty test split.")
+    if train_df[date_col].max() >= test_df[date_col].min():
+        raise ValueError("Temporal leakage detected: train max date overlaps test window.")
+
+    return train_df, test_df

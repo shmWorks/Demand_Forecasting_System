@@ -1,4 +1,8 @@
 from pathlib import Path
+import os
+import random
+
+import numpy as np
 
 # Base paths
 PROJECT_ROOT = Path(__file__).resolve().parent.parent.parent
@@ -21,4 +25,12 @@ SAMPLE_N_DIST: int = 100_000   # Max rows for distribution plots
 for _dir in [DATA_DIR, RAW_DATA_DIR, PROCESSED_DATA_DIR, PARQUET_DATA_DIR,
              OUTPUT_DIR, PLOT_DIR, MODEL_DIR, LOG_DIR]:
     _dir.mkdir(parents=True, exist_ok=True)
+
+
+def set_global_seed(seed: int = 42) -> int:
+    """Set global seeds for reproducibility across stdlib and NumPy."""
+    os.environ["PYTHONHASHSEED"] = str(seed)
+    random.seed(seed)
+    np.random.seed(seed)
+    return seed
 
