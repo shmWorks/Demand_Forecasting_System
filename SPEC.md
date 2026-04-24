@@ -4,24 +4,24 @@
 
 status: ALL_PHASES_COMPLETE
 done: |
-  config.py, preprocessing.py, features.py, visualization.py,
-  models.py (GD_Linear, SeasonalNaive), evaluation.py,
-  notebooks/eda.ipynb, baseline_models.ipynb, advanced_models.ipynb,
-  evaluation.ipynb, cannibalization.ipynb
+config.py, preprocessing.py, features.py, visualization.py,
+models.py (GD_Linear, SeasonalNaive), evaluation.py,
+notebooks/eda.ipynb, baseline_models.ipynb, advanced_models.ipynb,
+evaluation.ipynb, cannibalization.ipynb
 next: EXECUTE_NOTEBOOKS → GENERATE_REPORTS → SUBMIT
 
 ---
 
 ## [CHECKPOINT_LOG]
 
-| Date | Phase | Status |
-|------|-------|--------|
-| 2026-04-20 | 1-4 | DONE — Core modules, EDA complete |
-| 2026-04-20 | 5 | DONE — Baseline (SeasonalNaive, GD_Linear) |
-| 2026-04-20 | 6 | DONE — Advanced (XGBoost, LightGBM + Optuna) |
-| 2026-04-20 | 7 | DONE — Evaluation + SHAP framework |
-| 2026-04-20 | 8 | DONE — Cannibalization analysis |
-| NEXT | 9 | Finalize best model, generate reports, submit |
+| Date       | Phase | Status                                        |
+| ---------- | ----- | --------------------------------------------- |
+| 2026-04-20 | 1-4   | DONE — Core modules, EDA complete             |
+| 2026-04-20 | 5     | DONE — Baseline (SeasonalNaive, GD_Linear)    |
+| 2026-04-20 | 6     | DONE — Advanced (XGBoost, LightGBM + Optuna)  |
+| 2026-04-20 | 7     | DONE — Evaluation + SHAP framework            |
+| 2026-04-20 | 8     | DONE — Cannibalization analysis               |
+| NEXT       | 9     | Finalize best model, generate reports, submit |
 
 ---
 

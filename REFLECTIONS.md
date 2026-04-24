@@ -37,4 +37,4 @@ RULE: `git rm --cached` big data/outputs. Add `data/`, `outputs/`, `.venv/` to `
 
 - `MISTAKE/PREFERENCE`: Consolidated redundant README files into a single source of truth.
 - `WHY`: Duplicate documentation (`README.md` vs `README copy.md`) creates confusion during architectural transitions.
-- `NEW RULE`: Always merge duplicate project documentation immediately after refactoring to ensure a single, professional point of entry.
+- `NEW RULE`: Always merge duplicate project documentation immediately after refactoring to ensure a single, professional point of entry.

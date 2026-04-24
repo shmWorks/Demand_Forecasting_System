@@ -4,3 +4,11 @@ matplotlib
 seaborn
 scikit-learn
 statsmodels
+xgboost
+lightgbm
+optuna
+shap
+joblib
+flask
+tabulate
+pytest

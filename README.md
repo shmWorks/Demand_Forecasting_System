@@ -1,14 +1,17 @@
 # Retail-IQ: Professional Retail Forecasting System
 
 ## 📌 Overview
+
 Retail-IQ is a machine learning-based sales forecasting system designed to handle large-scale retail time-series data. It features a modular architecture for data preprocessing, feature engineering, and automated reporting, providing real-time predictions through a user-friendly interface.
 
 ## 👥 Team Members
+
 - Ayesha Khalid (23L-0667)
 - Uma E Rubab (23L-0928)
 - Sheraz Malik (23L-0572)
 
 ## 🛠 Tech Stack
+
 - **Machine Learning**: Scikit-learn, XGBoost, Statsmodels
 - **Data Processing**: Pandas, NumPy
 - **Visualization**: Matplotlib, Seaborn
@@ -18,6 +21,7 @@ Retail-IQ is a machine learning-based sales forecasting system designed to handl
 - **DevOps/Tools**: Pathlib (robust paths), uv/Setuptools (package mgmt)
 
 ## 📂 Project Structure
+
 ```
 Retail-IQ/
 ├── data/
@@ -43,6 +47,7 @@ Retail-IQ/
 ## 🚀 Getting Started
 
 ### 1. Setup Environment
+
 ```bash
 # Using uv (recommended)
 uv venv
@@ -57,9 +62,11 @@ pip install -e .
 ### 2. Usage
 
 #### Data Analysis & EDA
+
 Open `notebooks/eda.ipynb` to run the exploration, feature engineering, and baseline model training.
 
 #### Web Application
+
 The Flask-based interface can be launched once the core package is installed. (Check `app/` or `run.py` in previous versions for entry points).
 
 ---

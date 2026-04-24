@@ -14,7 +14,13 @@ dependencies = [
     "scikit-learn",
     "statsmodels",
     "xgboost",
-    "flask"
+    "lightgbm",
+    "optuna",
+    "shap",
+    "joblib",
+    "flask",
+    "tabulate",
+    "pytest"
 ]
 
 [tool.setuptools.package-dir]
