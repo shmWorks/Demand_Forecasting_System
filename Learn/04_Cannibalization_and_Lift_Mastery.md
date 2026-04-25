@@ -48,6 +48,25 @@ The notebook generates `cannibalization_report.md` detailing specific cannibal p
 
 ## 4. Sovereign Extension: Integrating the Physics
 
+```mermaid
+graph TD
+    subgraph Current Disconnected Architecture
+        A[Offline Notebook] -->|Pearson r < -0.35| B[Markdown Report]
+        B -.->|Ignored by Pipeline| C(Dead End)
+        D[Model Pipeline] -->|Sum ALL Store Sales| E[Noisy 'Other Sales' Feature]
+    end
+
+    subgraph Proposed Sovereign Architecture
+        F[Data Stream] --> G[Offline Cannibal Pair Detector]
+        G -->|Dictionary mapping Family I -> J| H[Feature Injector]
+        F --> H
+        H -->|Inject 'Is J on Promo' into I's features| I[Cross-Elasticity Aware Model]
+    end
+
+    style Current Disconnected Architecture fill:#f9dbdb,stroke:#c41e3a,stroke-width:2px
+    style Proposed Sovereign Architecture fill:#d4edda,stroke:#28a745,stroke-width:2px
+```
+
 We must unify the analytical detection with the predictive model. The model needs to be "aware" of specific, localized cannibalization vectors.
 
 ### Step-by-Step Actionable Insights

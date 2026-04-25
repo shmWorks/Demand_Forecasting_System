@@ -37,6 +37,28 @@ While RMSLE is a mathematically sound choice for the Kaggle *Favorita* competiti
 
 ## 4. Sovereign Extension: From Accuracy to ROI
 
+```mermaid
+graph LR
+    subgraph Academic Evaluation Pipeline
+        A[Prediction] --> B[Log1p Transform]
+        B --> C[Compute MSE]
+        C --> D[Sqrt -> RMSLE]
+        D --> E[Symmetric Penalty]
+    end
+
+    subgraph Business Profit Pipeline
+        F[Prediction] --> G[Attach Margin Config]
+        G --> H{Over-predicted?}
+        H -->|Yes| I[Cost = Spoilage/Holding * Delta]
+        H -->|No| J[Cost = Opportunity Loss * Delta]
+        I --> K[Net Dollar Loss]
+        J --> K
+    end
+
+    style Academic Evaluation Pipeline fill:#f2f2f2,stroke:#333,stroke-width:2px
+    style Business Profit Pipeline fill:#d4edda,stroke:#28a745,stroke-width:2px
+```
+
 To transform this system from an academic exercise into a C-suite prescriptive engine, we must construct a custom loss function that bridges the statistical-business gap.
 
 ### Step-by-Step Actionable Insights

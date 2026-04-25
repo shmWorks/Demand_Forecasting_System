@@ -50,6 +50,21 @@ $\text{Net Profit} = (P'_A - C_A) \cdot D'_A - (P_A - C_A) \cdot D_A - (P_B - C_
 
 If this Net Profit is $\leq 0$, the promotion is a destructive action, regardless of how much absolute lift item $A$ receives.
 
+```mermaid
+graph TD
+    A[Raw Data] --> B[Quantile Regressor Model]
+    B -->|Predicts P10, P50, P90 Demand| C[Newsvendor Engine]
+    D[Margin Config: Cost, Price, Salvage] --> C
+    C -->|Calculates Critical Fractile| E[Optimal Stocking Qty Q*]
+    E --> F{Evaluate Cannibalization Net Profit}
+    F -->|Net Profit > 0| G[Execute Promotion & Stock Q*]
+    F -->|Net Profit <= 0| H[Veto Promotion & Re-forecast]
+
+    style C fill:#ffeeba,stroke:#ffc107,stroke-width:2px
+    style G fill:#d4edda,stroke:#28a745,stroke-width:2px
+    style H fill:#f8d7da,stroke:#dc3545,stroke-width:2px
+```
+
 ### Step-by-Step Actionable Insights
 
 *   **Insight 1 (Probabilistic Forecasting):** Transition the model output from point estimates (e.g., `predict(X) -> 300`) to probabilistic forecasts. Use Quantile Regression (e.g., LightGBM with `objective='quantile'`) to predict the 10th, 50th, and 90th percentiles of demand.

@@ -42,6 +42,25 @@ df[col] = df[col].astype(np.int32, copy=False)
 
 ## 3. Sovereign Extension: The Hardened Pipeline
 
+```mermaid
+graph TD
+    subgraph Eager Pandas Flaw
+        A[Load 3M rows CSV] -->|RAM spike| B[Merge Tables]
+        B -->|RAM spike + Copy| C[FastFeatureEngineer]
+        C -->|df.copy() RAM doubles| D[Model Train]
+    end
+
+    subgraph Polars LazyFrame Architecture
+        E[Lazy Load Parquet] -->|0 Bytes loaded| F[Lazy Merge]
+        F -->|0 Bytes loaded| G[Lazy GroupBy & Shift]
+        G -->|Stream in chunks| H[.collect()]
+        H -->|Zero-Copy Arrow passing| I[Model Train]
+    end
+
+    style Eager Pandas Flaw fill:#f9dbdb,stroke:#c41e3a,stroke-width:2px
+    style Polars LazyFrame Architecture fill:#cce5ff,stroke:#004085,stroke-width:2px
+```
+
 We must patch the leaks and enforce true memory efficiency without requiring a complete rewrite to Polars or PySpark.
 
 ### Step-by-Step Actionable Insights

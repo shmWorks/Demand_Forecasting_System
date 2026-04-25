@@ -41,6 +41,28 @@ Because `@jax.jit` compiles the graph based on the *shape* of the input arrays, 
 
 ## 4. Sovereign Extension: The True Production Regressor
 
+```mermaid
+sequenceDiagram
+    participant User
+    participant Model
+    participant JAX_Compiler
+    participant Hardware
+
+    User->>Model: fit(X_huge, y_huge)
+    Note over Model: Current Flaw: Loading 100M rows to RAM
+    Model->>JAX_Compiler: @jit(X_shape, y_shape)
+    JAX_Compiler->>Hardware: Allocate VRAM/RAM
+    Note over Hardware: OOM Crash!
+
+    User->>Model: fit(X_stream, y_stream)
+    Note over Model: Sovereign Extension: Mini-batches
+    loop Every 10k rows
+        Model->>JAX_Compiler: apply_gradients(batch_X, batch_y)
+        JAX_Compiler->>Hardware: Execute fast static kernel
+        Hardware-->>Model: update weights
+    end
+```
+
 To elevate this model to a robust, Top 0.000001% implementation, we must abandon naïve batch processing.
 
 ### Step-by-Step Actionable Insights

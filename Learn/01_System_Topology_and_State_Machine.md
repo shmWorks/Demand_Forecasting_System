@@ -5,6 +5,21 @@
 The Retail-IQ system operates on a rigid, mostly linear Directed Acyclic Graph (DAG) for data ingestion, transformation, and model training. The execution flows from raw data to serialized artifacts, primarily orchestrated via the `FastFeatureEngineer` class and standalone preprocessing functions.
 
 ### The Standard State Flow
+
+```mermaid
+graph TD
+    A[Raw Data / Parquet] -->|load_raw_data| B[Date Coercion]
+    B -->|preprocess_dates| C[God Object: merge_datasets]
+    C -->|strict_temporal_holdout_split| D[Train Set]
+    C -->|strict_temporal_holdout_split| E[Test Set]
+    D -->|FastFeatureEngineer| F[Implicit Sorted DataFrame]
+    F -->|add_lag_and_rolling| G[Corruptible Features]
+    G -->|GD_Linear / SeasonalNaive| H[Model Artifacts]
+
+    classDef fragile fill:#f9dbdb,stroke:#c41e3a,stroke-width:2px;
+    class C,F,G fragile;
+```
+
 1.  **Ingestion (`load_raw_data`)**: Reads from fast Parquet paths (`PARQUET_DATA_DIR`) or falls back to CSVs (`RAW_DATA_DIR`). [Source: `src/retail_iq/preprocessing.py:L18`]
 2.  **Date Coercion (`preprocess_dates`)**: Casts heterogenous date strings to `datetime64[ns]`. [Source: `src/retail_iq/preprocessing.py:L56`]
 3.  **Global Merge (`merge_datasets`)**: Left-joins store metadata, cleaned oil prices, and transactions onto the main training frame. Flag national holidays. **Critically: Sorts the frame by `['store_nbr', 'family', 'date']`**. [Source: `src/retail_iq/preprocessing.py:L84`]
@@ -41,6 +56,27 @@ To move from "fragile script" to "Top 0.000001% Enterprise System", the architec
 
 ### The Target Architecture
 We shift from an implicit state machine to a **Declarative Computation Graph**.
+
+```mermaid
+graph TD
+    A[Raw Data] --> B[Data Validated Immutable Layer]
+    B --> C[Declarative Joiner]
+    C --> D[Temporal Split]
+    D --> E[Type-Hinted SortedTimeSeriesFrame]
+
+    E --> F[Transformer: Temporal Features]
+    E --> G[Transformer: Lag & Rolling]
+    E --> H[Transformer: Cannibalization]
+
+    F --> I[Pipeline Aggregator]
+    G --> I
+    H --> I
+
+    I --> J[Stochastic Model Engine]
+
+    classDef robust fill:#d4edda,stroke:#28a745,stroke-width:2px;
+    class E,F,G,H,I robust;
+```
 
 1.  **Immutability**: Dataframes should be treated as immutable within the feature generation pipeline.
 2.  **Explicit Ordering Guarantees**: Instead of relying on a global sort in `__init__`, time-series operations (like `.shift()` and `.rolling()`) should explicitly enforce their required groupings and orderings via modern Pandas paradigms (e.g., passing the sort key directly into the groupby, or validating the index).
