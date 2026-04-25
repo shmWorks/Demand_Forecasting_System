@@ -26,7 +26,7 @@ Retail-IQ is designed as a strict Directed Acyclic Graph (DAG) pipeline. Every s
 graph TD;
     A[Raw CSVs] -->|config.py paths| B(preprocessing.py: Parquet loader);
     B -->|ffill / merge| C(features.py: FastFeatureEngineer);
-    C -->|Vectorized O\(N log K\) Ops| D(models.py: GD_Linear, SeasonalNaive);
+    C -->|"Vectorized O(N log K) Ops"| D(models.py: GD_Linear, SeasonalNaive);
     C -->|Optuna Tuned| E(XGBoost / LightGBM Notebooks);
     D --> F(evaluation.py: RMSLE, SHAP);
     E --> F;
