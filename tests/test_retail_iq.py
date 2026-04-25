@@ -348,7 +348,7 @@ class TestEvaluation:
         """generate_shap_summary uses lazy import — patch via builtins.__import__."""
         mock_shap = MagicMock()
         mock_explainer = MagicMock()
-        mock_shap.TreeExplainer.return_value = mock_explainer
+        mock_shap.Explainer.return_value = mock_explainer
 
         original_import = __builtins__.__import__ if hasattr(__builtins__, '__import__') else __import__
 
@@ -366,8 +366,8 @@ class TestEvaluation:
             X_test = pd.DataFrame({'a': [1], 'b': [2]})
             evaluation.generate_shap_summary(mock_model, X_test, save_path='shap.png')
 
-        mock_shap.TreeExplainer.assert_called_with(mock_model)
-        mock_explainer.shap_values.assert_called_with(X_test)
+        mock_shap.Explainer.assert_called_with(mock_model)
+        mock_explainer.assert_called_with(X_test)
 
 # ==========================================
 # VISUALIZATION TESTS
