@@ -249,7 +249,7 @@ class FastFeatureEngineer:
         if "type" in self.df.columns:
             self.df = self.df.rename(columns={"type": "store_type"})
 
-        if "store_type" in self.df.columns and self.df["store_type"].dtype == object:
+        if "store_type" in self.df.columns and self.df["store_type"].dtype == object or self.df["store_type"].dtype.name in ("string", "str"):
             type_map = {"A": 0, "B": 1, "C": 2, "D": 3, "E": 4}
             self.df["store_type"] = self.df["store_type"].map(type_map)
 
