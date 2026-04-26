@@ -3,6 +3,16 @@
 Note: ``import shap`` is lazy (inside generate_shap_summary) — avoids ~200ms
 startup overhead on every notebook import of evaluate_model.
 """
+
+"""Before:
+Pure statistical evaluation
+Treats all errors equally
+After:
+✅ Business-aware (over vs under prediction)
+✅ Financial-aware (margin weighting)
+✅ Still compatible with your pipeline"""
+
+
 from __future__ import annotations
 
 import logging
@@ -20,42 +30,90 @@ def evaluate_model(
     y_true: np.ndarray,
     y_pred: np.ndarray,
     model_name: str,
+    margin: Optional[np.ndarray] = None,
+    c_over: float = 1.0,
+    c_under: float = 2.0,
 ) -> Dict[str, Any]:
-    """Compute and print RMSLE, RMSE, MAPE, and R² for a set of predictions.
-
-    Negative predictions are clipped to 0 for RMSLE/log computation.
-    MAPE excludes zero actuals to avoid division by zero.
+    """
+    Compute evaluation metrics including business-aware asymmetric loss
+    and optional margin-weighted errors.
 
     Args:
-        y_true:     Ground-truth sales values.
-        y_pred:     Predicted sales values (may be negative — will be clipped).
-        model_name: Label printed in the output line.
+        y_true: Ground-truth values
+        y_pred: Predictions
+        model_name: Name for logging
+        margin: Optional margin/importance weights per sample
+        c_over: Cost of overprediction
+        c_under: Cost of underprediction
 
     Returns:
-        Dict with keys 'model', 'RMSLE', 'RMSE', 'MAPE', 'R2'.
+        Dict of metrics
     """
+
     y_true = np.asarray(y_true, dtype=float)
     y_pred = np.asarray(y_pred, dtype=float)
+
+    # 🔒 Clip negatives (important for stability)
     y_pred_clipped = np.clip(y_pred, 0, None)
     y_true_clipped = np.clip(y_true, 0, None)
+
     if np.any(y_true < 0):
-        logger.warning("evaluate_model: negative y_true detected; clipping to 0 for RMSLE.")
+        logger.warning("evaluate_model: negative y_true detected; clipping to 0.")
 
-    # RMSLE — primary metric per SPEC (handles zeros, asymmetric penalty)
+    # -------------------------
+    # Standard metrics
+    # -------------------------
     rmsle = float(np.sqrt(np.mean((np.log1p(y_pred_clipped) - np.log1p(y_true_clipped)) ** 2)))
-
     rmse = float(np.sqrt(mean_squared_error(y_true, y_pred)))
 
-    # MAPE — exclude zero actuals
     mask = y_true > 0
-    mape = float(mean_absolute_percentage_error(y_true[mask], y_pred[mask]) * 100) if mask.sum() > 0 else float("nan")
+    mape = (
+        float(mean_absolute_percentage_error(y_true[mask], y_pred[mask]) * 100)
+        if mask.sum() > 0 else float("nan")
+    )
 
     r2 = float(r2_score(y_true, y_pred))
 
-    print(f"{model_name}: RMSLE={rmsle:.4f}, RMSE={rmse:.2f}, MAPE={mape:.2f}%, R²={r2:.4f}")
+    # -------------------------
+    # 🔥 Asymmetric loss (IMPORTANT)
+    # -------------------------
+    over = np.maximum(y_pred - y_true, 0)
+    under = np.maximum(y_true - y_pred, 0)
+    asym_loss = float(np.mean(c_over * over + c_under * under))
 
-    return {"model": model_name, "RMSLE": rmsle, "RMSE": rmse, "MAPE": mape, "R2": r2}
+    # -------------------------
+    # 💰 Margin-weighted error
+    # -------------------------
+    if margin is not None:
+        margin = np.asarray(margin, dtype=float)
+        weights = margin / (np.sum(margin) + 1e-8)  # normalize
 
+        weighted_mae = float(np.sum(weights * np.abs(y_true - y_pred)))
+        weighted_rmse = float(np.sqrt(np.sum(weights * (y_true - y_pred) ** 2)))
+    else:
+        weighted_mae = float("nan")
+        weighted_rmse = float("nan")
+
+    # -------------------------
+    # Print results
+    # -------------------------
+    print(
+        f"{model_name}: "
+        f"RMSLE={rmsle:.4f}, RMSE={rmse:.2f}, MAPE={mape:.2f}%, R²={r2:.4f}, "
+        f"AsymLoss={asym_loss:.2f}, "
+        f"W-MAE={weighted_mae:.2f}, W-RMSE={weighted_rmse:.2f}"
+    )
+
+    return {
+        "model": model_name,
+        "RMSLE": rmsle,
+        "RMSE": rmse,
+        "MAPE": mape,
+        "R2": r2,
+        "AsymmetricLoss": asym_loss,
+        "Weighted_MAE": weighted_mae,
+        "Weighted_RMSE": weighted_rmse,
+    }
 
 def plot_residuals(
     y_true: np.ndarray,
