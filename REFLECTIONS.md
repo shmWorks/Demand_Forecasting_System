@@ -38,3 +38,7 @@ RULE: `git rm --cached` big data/outputs. Add `data/`, `outputs/`, `.venv/` to `
 - `MISTAKE/PREFERENCE`: Consolidated redundant README files into a single source of truth.
 - `WHY`: Duplicate documentation creates confusion during architectural transitions.
 - `NEW RULE`: Merge duplicate project documentation immediately after refactoring.
+
+- `MISTAKE/PREFERENCE`: Broad keyword searches for project context can fail if domain-specific terms are used instead.
+- `WHY`: Generic terms like "dataset" or "link" might not appear in dense technical specs.
+- `NEW RULE`: Prioritize reading `SPEC.md` and `CLAUDE.md` to extract domain entities (e.g., "Favorita") for targeted searches.
