@@ -14,3 +14,8 @@ tabulate
 pytest
 polars
 pyarrow
+pymongo
+pydantic
+PyJWT
+bcrypt
+flask-cors

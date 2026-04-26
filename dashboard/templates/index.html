@@ -1,0 +1,401 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Retail-IQ Dashboard</title>
+
+    <!-- Alpine.js for lightweight state management -->
+    <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
+
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+    <style>
+        :root {
+            --bg: #0a0a0a;
+            --surface: #171717;
+            --surface-hover: #262626;
+            --text-primary: #f5f5f5;
+            --text-secondary: #a3a3a3;
+            --accent: #2563eb;
+            --accent-hover: #1d4ed8;
+            --danger: #ef4444;
+            --success: #22c55e;
+            --border: #404040;
+            --font-mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+
+        body {
+            background-color: var(--bg);
+            color: var(--text-primary);
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            line-height: 1.5;
+            -webkit-font-smoothing: antialiased;
+        }
+
+        /* --- Layout & Typography --- */
+        .container { max-width: 1200px; margin: 0 auto; padding: 2rem; }
+        h1, h2, h3 { font-weight: 600; letter-spacing: -0.025em; margin-bottom: 1rem; }
+        .text-mono { font-family: var(--font-mono); font-size: 0.875rem; color: var(--text-secondary); }
+
+        /* --- Forms & Buttons (Fitts's Law applied) --- */
+        input, select, button {
+            background: var(--surface);
+            color: var(--text-primary);
+            border: 1px solid var(--border);
+            padding: 0.75rem 1rem;
+            font-size: 1rem;
+            border-radius: 4px;
+            width: 100%;
+            margin-bottom: 1rem;
+        }
+        input:focus, select:focus { outline: none; border-color: var(--accent); }
+
+        button {
+            background: var(--accent);
+            color: white;
+            font-weight: 500;
+            cursor: pointer;
+            border: none;
+            transition: background 0.2s;
+        }
+        button:hover { background: var(--accent-hover); }
+
+        /* --- Components --- */
+        .card {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            padding: 1.5rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .grid { display: grid; gap: 1.5rem; }
+        .grid-2 { grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); }
+        .grid-4 { grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); }
+
+        .stat-value { font-size: 2rem; font-weight: 700; margin-top: 0.5rem; }
+
+        table { width: 100%; border-collapse: collapse; }
+        th, td { text-align: left; padding: 0.75rem; border-bottom: 1px solid var(--border); }
+        th { color: var(--text-secondary); font-weight: 500; }
+
+        .badge {
+            display: inline-block;
+            padding: 0.25rem 0.5rem;
+            border-radius: 9999px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            text-transform: uppercase;
+        }
+        .badge-High { background: rgba(239, 68, 68, 0.2); color: var(--danger); }
+        .badge-Medium { background: rgba(245, 158, 11, 0.2); color: #f59e0b; }
+        .badge-Low { background: rgba(34, 197, 94, 0.2); color: var(--success); }
+
+        .auth-container { max-width: 400px; margin: 10vh auto; }
+        .hidden { display: none !important; }
+        .error { color: var(--danger); font-size: 0.875rem; margin-top: -0.5rem; margin-bottom: 1rem; }
+
+        nav { display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem; padding-bottom: 1rem; border-bottom: 1px solid var(--border); }
+        nav h1 { margin: 0; }
+        .nav-actions button { width: auto; margin: 0; padding: 0.5rem 1rem; background: var(--surface); border: 1px solid var(--border); color: var(--text-primary); }
+        .nav-actions button:hover { background: var(--surface-hover); }
+
+        canvas { max-width: 100%; }
+    </style>
+</head>
+<body x-data="app()">
+
+    <!-- AUTHENTICATION VIEW -->
+    <div x-show="!isAuthenticated" class="container auth-container" x-cloak>
+        <div class="card">
+            <h2>System Login</h2>
+            <p class="text-mono" style="margin-bottom: 1.5rem;">Retail-IQ Forecasting Node</p>
+
+            <template x-if="authError">
+                <div class="error" x-text="authError"></div>
+            </template>
+
+            <form @submit.prevent="login">
+                <input type="text" x-model="loginForm.username" placeholder="Username" required>
+                <input type="password" x-model="loginForm.password" placeholder="Password" required>
+                <button type="submit">Authenticate</button>
+            </form>
+            <div style="text-align: center; margin-top: 1rem;">
+                <button @click="seedDefault" style="background:transparent; border:1px solid var(--border); color:var(--text-secondary);">Populate Default Credentials</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- DASHBOARD VIEW -->
+    <div x-show="isAuthenticated" class="container" x-cloak>
+        <nav>
+            <div>
+                <h1>Retail-IQ</h1>
+                <div class="text-mono">Forecasting Pipeline Overview</div>
+            </div>
+            <div class="nav-actions">
+                <button @click="logout">Terminate Session</button>
+            </div>
+        </nav>
+
+        <!-- Metrics Overview -->
+        <div class="grid grid-4" style="margin-bottom: 2rem;">
+            <div class="card" style="margin-bottom: 0;">
+                <div class="text-mono">Total Sales Volume</div>
+                <div class="stat-value" x-text="formatCurrency(metrics.total_sales)"></div>
+            </div>
+            <div class="card" style="margin-bottom: 0;">
+                <div class="text-mono">Tracked SKUs</div>
+                <div class="stat-value" x-text="metrics.num_products"></div>
+            </div>
+            <div class="card" style="margin-bottom: 0;">
+                <div class="text-mono">Active Promotions</div>
+                <div class="stat-value" x-text="metrics.active_promotions"></div>
+            </div>
+            <div class="card" style="margin-bottom: 0;">
+                <div class="text-mono">Pipeline RMSLE</div>
+                <div class="stat-value" x-text="metrics.forecast_accuracy"></div>
+            </div>
+        </div>
+
+        <div class="grid grid-2">
+            <!-- Sales Trend -->
+            <div class="card">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+                    <h2>Sales & Forecast Trends</h2>
+                    <select x-model="timeFilter" @change="fetchTrends" style="width: auto; margin: 0; padding: 0.25rem 0.5rem;">
+                        <option value="weekly">7 Days</option>
+                        <option value="monthly">30 Days</option>
+                        <option value="yearly">365 Days</option>
+                    </select>
+                </div>
+                <canvas id="trendChart"></canvas>
+            </div>
+
+            <!-- Promotion Impact -->
+            <div class="card">
+                <h2>Promotion Impact (Last 14 Days)</h2>
+                <canvas id="promoChart"></canvas>
+            </div>
+        </div>
+
+        <div class="grid grid-2" style="margin-top: 1.5rem;">
+            <!-- Top Products -->
+            <div class="card">
+                <h2>Top Performing Entities</h2>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Rank</th>
+                            <th>Entity</th>
+                            <th>Volume</th>
+                            <th>Forecast Δ</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <template x-for="p in topProducts" :key="p.product_id">
+                            <tr>
+                                <td x-text="'#'+p.rank"></td>
+                                <td x-text="p.name" style="font-weight: 500;"></td>
+                                <td x-text="formatCurrency(p.sales)"></td>
+                                <td :style="p.forecast_growth >= 0 ? 'color: var(--success)' : 'color: var(--danger)'" x-text="(p.forecast_growth >= 0 ? '+' : '') + p.forecast_growth + '%'"></td>
+                            </tr>
+                        </template>
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- Recommendations -->
+            <div class="card">
+                <h2>System Intelligence</h2>
+                <div class="grid" style="gap: 1rem;">
+                    <template x-for="(rec, i) in recommendations" :key="i">
+                        <div style="padding-bottom: 1rem; border-bottom: 1px solid var(--border);">
+                            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.25rem;">
+                                <div style="font-weight: 600;" x-text="rec.title"></div>
+                                <span :class="'badge badge-' + rec.priority" x-text="rec.priority"></span>
+                            </div>
+                            <div class="text-mono" x-text="rec.description"></div>
+                        </div>
+                    </template>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Chart.js global defaults for dark mode minimal aesthetic
+        Chart.defaults.color = '#a3a3a3';
+        Chart.defaults.borderColor = '#404040';
+        Chart.defaults.font.family = 'ui-monospace, SFMono-Regular, monospace';
+
+        document.addEventListener('alpine:init', () => {
+            Alpine.data('app', () => ({
+                isAuthenticated: false,
+                token: localStorage.getItem('retail_iq_token'),
+                authError: '',
+                loginForm: { username: '', password: '' },
+                timeFilter: 'monthly',
+
+                metrics: { total_sales: 0, num_products: 0, active_promotions: 0, forecast_accuracy: 0 },
+                topProducts: [],
+                recommendations: [],
+
+                trendChartInst: null,
+                promoChartInst: null,
+
+                init() {
+                    if (this.token) {
+                        this.isAuthenticated = true;
+                        this.loadDashboardData();
+                    }
+                },
+
+                seedDefault() {
+                    this.loginForm.username = 'admin';
+                    this.loginForm.password = 'admin';
+                },
+
+                async login() {
+                    this.authError = '';
+                    try {
+                        const res = await fetch('/api/auth/login', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify(this.loginForm)
+                        });
+
+                        const data = await res.json();
+
+                        if (!res.ok) throw new Error(data.detail || 'Login failed');
+
+                        this.token = data.token;
+                        localStorage.setItem('retail_iq_token', this.token);
+                        this.isAuthenticated = true;
+                        this.loadDashboardData();
+                    } catch (e) {
+                        this.authError = e.message;
+                    }
+                },
+
+                logout() {
+                    this.token = null;
+                    localStorage.removeItem('retail_iq_token');
+                    this.isAuthenticated = false;
+                    if(this.trendChartInst) this.trendChartInst.destroy();
+                    if(this.promoChartInst) this.promoChartInst.destroy();
+                },
+
+                async apiGet(endpoint) {
+                    const res = await fetch(endpoint, {
+                        headers: { 'Authorization': `Bearer ${this.token}` }
+                    });
+                    if (res.status === 401) {
+                        this.logout();
+                        throw new Error('Session expired');
+                    }
+                    return res.json();
+                },
+
+                async loadDashboardData() {
+                    try {
+                        this.metrics = await this.apiGet('/api/dashboard/overview');
+                        this.topProducts = await this.apiGet('/api/dashboard/top-products');
+                        this.recommendations = await this.apiGet('/api/dashboard/recommendations');
+
+                        this.fetchTrends();
+                        this.fetchPromotions();
+                    } catch (e) {
+                        console.error("Failed to load dashboard data", e);
+                    }
+                },
+
+                async fetchTrends() {
+                    const trends = await this.apiGet(`/api/dashboard/trends?filter=${this.timeFilter}`);
+                    const labels = trends.map(t => t.date);
+                    const sales = trends.map(t => t.sales);
+                    const forecast = trends.map(t => t.forecast);
+
+                    const ctx = document.getElementById('trendChart');
+                    if (this.trendChartInst) this.trendChartInst.destroy();
+
+                    this.trendChartInst = new Chart(ctx, {
+                        type: 'line',
+                        data: {
+                            labels,
+                            datasets: [
+                                {
+                                    label: 'Actual Sales',
+                                    data: sales,
+                                    borderColor: '#2563eb',
+                                    tension: 0.1,
+                                    borderWidth: 2,
+                                    pointRadius: 0
+                                },
+                                {
+                                    label: 'Forecast',
+                                    data: forecast,
+                                    borderColor: '#f59e0b',
+                                    borderDash: [5, 5],
+                                    tension: 0.1,
+                                    borderWidth: 2,
+                                    pointRadius: 0
+                                }
+                            ]
+                        },
+                        options: {
+                            responsive: true,
+                            interaction: { mode: 'index', intersect: false },
+                            plugins: { legend: { position: 'top', align: 'end' } },
+                            scales: { y: { beginAtZero: false } }
+                        }
+                    });
+                },
+
+                async fetchPromotions() {
+                    const promos = await this.apiGet('/api/dashboard/promotions');
+                    const labels = promos.map(p => p.date);
+                    const normal = promos.map(p => p.normal_sales);
+                    const promo = promos.map(p => p.promotional_sales);
+
+                    const ctx = document.getElementById('promoChart');
+                    if (this.promoChartInst) this.promoChartInst.destroy();
+
+                    this.promoChartInst = new Chart(ctx, {
+                        type: 'bar',
+                        data: {
+                            labels,
+                            datasets: [
+                                {
+                                    label: 'Baseline Baseline',
+                                    data: normal,
+                                    backgroundColor: '#404040'
+                                },
+                                {
+                                    label: 'Promo Lift',
+                                    data: promo,
+                                    backgroundColor: '#22c55e'
+                                }
+                            ]
+                        },
+                        options: {
+                            responsive: true,
+                            plugins: { legend: { position: 'top', align: 'end' } },
+                            scales: { x: { stacked: true }, y: { stacked: true, beginAtZero: true } }
+                        }
+                    });
+                },
+
+                formatCurrency(val) {
+                    if (val === undefined || val === null) return '-';
+                    return new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', maximumFractionDigits: 0 }).format(val);
+                }
+            }));
+        });
+    </script>
+</body>
+</html>

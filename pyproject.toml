@@ -7,6 +7,11 @@ name = "retail_iq"
 version = "1.0.0"
 description = "Retail Sales Forecasting System"
 dependencies = [
+    "pymongo",
+    "pydantic",
+    "PyJWT",
+    "bcrypt",
+    "flask-cors",
     "pandas",
     "numpy",
     "matplotlib",
