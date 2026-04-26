@@ -109,27 +109,65 @@ class FastFeatureEngineer:
 
         return self
 
+    # def add_onpromotion_features(self) -> "FastFeatureEngineer":
+
+    #     self._assert_sorted()  # 🔥 critical
+
+    #     if "onpromotion" not in self.df.columns:
+    #         return self
+
+    #     grouped = self.df.groupby(_SORT_COLS[:2], sort=False)["onpromotion"]
+    #     group_keys = [self.df["store_nbr"], self.df["family"]]
+
+    #     onpromo_shift_1d = grouped.shift(1)
+    #     self.df["onpromotion_lag_1d"] = onpromo_shift_1d
+    #     self.df["onpromotion_rolling_7d"] = (
+    #         onpromo_shift_1d
+    #         .groupby(group_keys, sort=False)
+    #         .rolling(7)
+    #         .mean()
+    #         .reset_index(level=[0, 1], drop=True)
+    #     )
+
+    #     return self
+
+
     def add_onpromotion_features(self) -> "FastFeatureEngineer":
 
-        self._assert_sorted()  # 🔥 critical
+    self._assert_sorted()  # 🔥 critical
 
-        if "onpromotion" not in self.df.columns:
-            return self
-
-        grouped = self.df.groupby(_SORT_COLS[:2], sort=False)["onpromotion"]
-        group_keys = [self.df["store_nbr"], self.df["family"]]
-
-        onpromo_shift_1d = grouped.shift(1)
-        self.df["onpromotion_lag_1d"] = onpromo_shift_1d
-        self.df["onpromotion_rolling_7d"] = (
-            onpromo_shift_1d
-            .groupby(group_keys, sort=False)
-            .rolling(7)
-            .mean()
-            .reset_index(level=[0, 1], drop=True)
-        )
-
+    if "onpromotion" not in self.df.columns:
         return self
+
+    # -----------------------------
+    # Base promotion features
+    # -----------------------------
+    grouped = self.df.groupby(_SORT_COLS[:2], sort=False)["onpromotion"]
+    group_keys = [self.df["store_nbr"], self.df["family"]]
+
+    onpromo_shift_1d = grouped.shift(1)
+
+    self.df["onpromotion_lag_1d"] = onpromo_shift_1d
+
+    self.df["onpromotion_rolling_7d"] = (
+        onpromo_shift_1d
+        .groupby(group_keys, sort=False)
+        .rolling(7)
+        .mean()
+        .reset_index(level=[0, 1], drop=True)
+    )
+
+    # -----------------------------
+    # 🔥 Promotion Intensity (Insight 3)
+    # -----------------------------
+    # Normalize promotion by family capacity (proxy for SKU count)
+    family_max = self.df.groupby("family")["onpromotion"].transform("max") + 1
+
+    self.df["onpromotion_ratio"] = self.df["onpromotion"] / family_max
+
+    return self
+
+    
 
     def add_macroeconomic_features(self) -> "FastFeatureEngineer":
 
