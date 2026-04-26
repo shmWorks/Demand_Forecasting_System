@@ -83,18 +83,33 @@ def preprocess_dates(dfs: List[pd.DataFrame]) -> List[pd.DataFrame]:
     return result
 
 
+# def clean_oil_prices(oil_df: pd.DataFrame) -> pd.DataFrame:
+#     """Sort by date and forward-fill then backward-fill missing oil prices.
+
+#     Args:
+#         oil_df: Raw oil DataFrame with 'date' and 'dcoilwtico' columns.
+
+#     Returns:
+#         Cleaned copy with no missing oil prices.
+#     """
+#     df = oil_df.copy()
+#     df = df.sort_values("date").reset_index(drop=True)
+#     df["dcoilwtico"] = df["dcoilwtico"].ffill().bfill()
+#     return df
+
 def clean_oil_prices(oil_df: pd.DataFrame) -> pd.DataFrame:
-    """Sort by date and forward-fill then backward-fill missing oil prices.
+    """Clean oil prices without introducing future data leakage."""
 
-    Args:
-        oil_df: Raw oil DataFrame with 'date' and 'dcoilwtico' columns.
-
-    Returns:
-        Cleaned copy with no missing oil prices.
-    """
     df = oil_df.copy()
     df = df.sort_values("date").reset_index(drop=True)
-    df["dcoilwtico"] = df["dcoilwtico"].ffill().bfill()
+
+    # Step 1: forward fill (safe - uses past only)
+    df["dcoilwtico"] = df["dcoilwtico"].ffill()
+
+    # Step 2: fill remaining NaNs (usually at start) with global mean
+    global_mean = df["dcoilwtico"].mean()
+    df["dcoilwtico"] = df["dcoilwtico"].fillna(global_mean)
+
     return df
 
 
