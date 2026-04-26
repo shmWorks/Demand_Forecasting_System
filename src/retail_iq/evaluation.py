@@ -110,16 +110,35 @@ def generate_shap_summary(
     import shap  # Lazy import — only paid when this function is called
 
     try:
-        explainer = shap.TreeExplainer(model)
-        shap_values = explainer.shap_values(X_test)
-    except Exception as exc:  # pragma: no cover - backend/version specific
-        # SHAP/XGBoost combo can fail on some builds (base_score parse issue).
-        # Keep evaluation pipeline alive and log actionable hint.
-        logger.warning("generate_shap_summary skipped: %s", exc)
-        return
+        explainer = shap.Explainer(model)
+        shap_values = explainer(X_test)
+    except Exception as exc:
+        # Try KernelExplainer as fallback for corrupted models or version conflicts.
+        # This is slower but more robust to serialization issues.
+        try:
+            logger.warning(
+                "generate_shap_summary: TreeExplainer failed (%s), "
+                "falling back to KernelExplainer (slower).",
+                str(exc)[:100],
+            )
+            explainer = shap.KernelExplainer(model.predict, X_test[:min(50, len(X_test))])
+            shap_values = explainer.shap_values(X_test)
+        except Exception as exc2:  # pragma: no cover - both methods failed
+            logger.warning("generate_shap_summary skipped: both explainers failed: %s", exc2)
+            return
 
     plt.figure(figsize=(12, 8))
-    shap.summary_plot(shap_values, X_test, plot_type="bar", show=False)
+    try:
+        shap.summary_plot(shap_values, X_test, plot_type="bar", show=False)
+    except Exception as exc:
+        logger.warning("generate_shap_summary: summary_plot failed, using waterfall: %s", exc)
+        try:
+            # Try simpler plotting as last resort
+            shap.plots.force(explainer.expected_value, shap_values[:10], X_test[:10], show=False)
+        except Exception:
+            logger.error("generate_shap_summary: all plotting methods failed")
+            plt.close()
+            return
 
     if save_path:
         plt.savefig(save_path, dpi=150, bbox_inches="tight")
