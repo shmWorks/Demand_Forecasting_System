@@ -8,7 +8,7 @@
 
 Retail chains face a dual failure mode: overstocking perishable goods creates waste, while understocking drives revenue leakage. Existing tools often apply univariate models that ignore critical retail dynamics.
 
-**Retail-IQ** is a multi-family panel regression forecasting system built to tackle this challenge. It analyzes daily sales across 54 stores and 33 product families using the Corporación Favorita dataset. Beyond mere forecasting, the system quantifies **promotional lift** and detects **cannibalization** across adjacent SKUs.
+**Retail-IQ** is a multi-family panel regression forecasting system built to tackle this challenge. It analyzes daily sales across 54 stores and 33 product families using the [Corporación Favorita Store Sales dataset](https://www.kaggle.com/competitions/store-sales-time-series-forecasting) from Kaggle. Beyond mere forecasting, the system quantifies **promotional lift** and detects **cannibalization** across adjacent SKUs.
 
 ### Key Capabilities
 - **Robust Pipeline**: Highly optimized feature engineering using vectorized operations (O(N log K) time complexity for complex mappings).
