@@ -1,19 +1,31 @@
-from flask import Flask, request, jsonify, render_template
+from flask import Flask, request, jsonify, render_template, send_from_directory
 from flask_cors import CORS
 from functools import wraps
 import jwt
 import datetime
 import bcrypt
 import os
+import threading
 
 from dashboard.db import db
 from dashboard.models import UserRegister, UserLogin, DashboardMetrics, SalesTrendPoint, PromotionImpactPoint, TopProduct, Recommendation
 from pydantic import ValidationError
 
+# Pipeline imports
+from run_eda import run_eda
+from retail_iq.config import OUTPUT_DIR
+
 app = Flask(__name__)
 CORS(app)
 
 SECRET_KEY = os.getenv("SECRET_KEY", "brutally-simple-secret")
+
+# In-memory status for the pipeline (in a real app this would be in the DB or Redis)
+pipeline_status = {
+    "status": "idle", # idle, running, completed, failed
+    "message": "Pipeline is ready to run.",
+    "artifacts": []
+}
 
 # --- Error Handling (RFC-7807 minimal) ---
 @app.errorhandler(400)
@@ -56,6 +68,56 @@ def token_required(f):
 @app.route("/")
 def index():
     return render_template("index.html")
+
+# --- Routes: Pipeline Integration ---
+def execute_pipeline_task():
+    global pipeline_status
+    try:
+        pipeline_status["status"] = "running"
+        pipeline_status["message"] = "Executing EDA and Modeling Pipeline..."
+        pipeline_status["artifacts"] = []
+
+        # Execute the actual pipeline (data load, merge, feature engineering, viz)
+        run_eda()
+
+        # Gather outputs
+        eda_dir = OUTPUT_DIR / "eda"
+        artifacts = []
+        if eda_dir.exists():
+            for f in os.listdir(eda_dir):
+                if f.endswith('.png'):
+                    artifacts.append(f)
+
+        pipeline_status["status"] = "completed"
+        pipeline_status["message"] = "Pipeline executed successfully."
+        pipeline_status["artifacts"] = artifacts
+
+    except Exception as e:
+        pipeline_status["status"] = "failed"
+        pipeline_status["message"] = f"Pipeline execution failed: {str(e)}"
+
+@app.route("/api/pipeline/run", methods=["POST"])
+@token_required
+def trigger_pipeline(current_user):
+    global pipeline_status
+    if pipeline_status["status"] == "running":
+        return jsonify({"message": "Pipeline is already running"}), 409
+
+    # Run in background to avoid blocking the API response
+    thread = threading.Thread(target=execute_pipeline_task)
+    thread.start()
+
+    return jsonify({"message": "Pipeline started."}), 202
+
+@app.route("/api/pipeline/status", methods=["GET"])
+@token_required
+def get_pipeline_status(current_user):
+    return jsonify(pipeline_status)
+
+@app.route("/api/pipeline/outputs/<filename>", methods=["GET"])
+def serve_pipeline_output(filename):
+    eda_dir = OUTPUT_DIR / "eda"
+    return send_from_directory(eda_dir, filename)
 
 # --- Routes: API Auth ---
 @app.route("/api/auth/register", methods=["POST"])
@@ -103,7 +165,6 @@ def get_overview(current_user):
     if not metrics:
         return jsonify({"total_sales": 0, "num_products": 0, "active_promotions": 0, "forecast_accuracy": 0})
 
-    # Validate and serialize using Pydantic
     try:
         validated = DashboardMetrics(**metrics)
         return jsonify(validated.model_dump())
@@ -113,7 +174,7 @@ def get_overview(current_user):
 @app.route("/api/dashboard/trends", methods=["GET"])
 @token_required
 def get_trends(current_user):
-    time_filter = request.args.get("filter", "monthly") # week, month, year
+    time_filter = request.args.get("filter", "monthly")
 
     limit = 30
     if time_filter == "weekly":
@@ -122,7 +183,7 @@ def get_trends(current_user):
         limit = 365
 
     trends = list(db.sales_trends.find({}, projection={"_id": 0}).sort("date", -1).limit(limit))
-    trends.reverse() # Chronological order
+    trends.reverse()
 
     try:
         validated_trends = [SalesTrendPoint(**t).model_dump() for t in trends]

@@ -5,10 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Retail-IQ Dashboard</title>
 
-    <!-- Alpine.js for lightweight state management -->
     <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
-
-    <!-- Chart.js -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
     <style>
@@ -36,12 +33,10 @@
             -webkit-font-smoothing: antialiased;
         }
 
-        /* --- Layout & Typography --- */
         .container { max-width: 1200px; margin: 0 auto; padding: 2rem; }
         h1, h2, h3 { font-weight: 600; letter-spacing: -0.025em; margin-bottom: 1rem; }
         .text-mono { font-family: var(--font-mono); font-size: 0.875rem; color: var(--text-secondary); }
 
-        /* --- Forms & Buttons (Fitts's Law applied) --- */
         input, select, button {
             background: var(--surface);
             color: var(--text-primary);
@@ -63,8 +58,8 @@
             transition: background 0.2s;
         }
         button:hover { background: var(--accent-hover); }
+        button:disabled { background: var(--border); color: var(--text-secondary); cursor: not-allowed; }
 
-        /* --- Components --- */
         .card {
             background: var(--surface);
             border: 1px solid var(--border);
@@ -96,7 +91,6 @@
         .badge-Low { background: rgba(34, 197, 94, 0.2); color: var(--success); }
 
         .auth-container { max-width: 400px; margin: 10vh auto; }
-        .hidden { display: none !important; }
         .error { color: var(--danger); font-size: 0.875rem; margin-top: -0.5rem; margin-bottom: 1rem; }
 
         nav { display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem; padding-bottom: 1rem; border-bottom: 1px solid var(--border); }
@@ -105,6 +99,16 @@
         .nav-actions button:hover { background: var(--surface-hover); }
 
         canvas { max-width: 100%; }
+
+        /* Pipeline Artifacts styling */
+        .artifact-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 1rem; }
+        .artifact-card { border: 1px solid var(--border); border-radius: 4px; padding: 0.5rem; background: var(--bg); text-align: center; }
+        .artifact-card img { max-width: 100%; height: auto; border-radius: 2px; }
+        .artifact-title { margin-top: 0.5rem; font-size: 0.8rem; color: var(--text-secondary); word-break: break-all; }
+
+        .status-running { color: #f59e0b; }
+        .status-completed { color: var(--success); }
+        .status-failed { color: var(--danger); }
     </style>
 </head>
 <body x-data="app()">
@@ -141,6 +145,37 @@
                 <button @click="logout">Terminate Session</button>
             </div>
         </nav>
+
+        <!-- Pipeline Execution Panel -->
+        <div class="card">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+                <h2>Pipeline Execution Engine</h2>
+                <button @click="triggerPipeline" :disabled="pipeline.status === 'running'" style="width: auto; margin: 0;">
+                    <span x-show="pipeline.status !== 'running'">Execute Pipeline</span>
+                    <span x-show="pipeline.status === 'running'">Running...</span>
+                </button>
+            </div>
+
+            <div class="text-mono" style="margin-bottom: 1rem;">
+                Status: <span :class="'status-' + pipeline.status" x-text="pipeline.status.toUpperCase()"></span>
+                <span x-text="' - ' + pipeline.message"></span>
+            </div>
+
+            <!-- Pipeline Outputs -->
+            <div x-show="pipeline.artifacts.length > 0">
+                <h3 style="margin-top: 1.5rem; font-size: 1.1rem; border-top: 1px solid var(--border); padding-top: 1rem;">Generated Pipeline Artifacts</h3>
+                <div class="artifact-grid">
+                    <template x-for="artifact in pipeline.artifacts" :key="artifact">
+                        <div class="artifact-card">
+                            <a :href="'/api/pipeline/outputs/' + artifact" target="_blank">
+                                <img :src="'/api/pipeline/outputs/' + artifact" :alt="artifact" loading="lazy">
+                            </a>
+                            <div class="artifact-title" x-text="artifact"></div>
+                        </div>
+                    </template>
+                </div>
+            </div>
+        </div>
 
         <!-- Metrics Overview -->
         <div class="grid grid-4" style="margin-bottom: 2rem;">
@@ -228,7 +263,6 @@
     </div>
 
     <script>
-        // Chart.js global defaults for dark mode minimal aesthetic
         Chart.defaults.color = '#a3a3a3';
         Chart.defaults.borderColor = '#404040';
         Chart.defaults.font.family = 'ui-monospace, SFMono-Regular, monospace';
@@ -245,6 +279,9 @@
                 topProducts: [],
                 recommendations: [],
 
+                pipeline: { status: 'idle', message: 'Pipeline is ready to run.', artifacts: [] },
+                pollInterval: null,
+
                 trendChartInst: null,
                 promoChartInst: null,
 
@@ -252,6 +289,7 @@
                     if (this.token) {
                         this.isAuthenticated = true;
                         this.loadDashboardData();
+                        this.checkPipelineStatus();
                     }
                 },
 
@@ -270,13 +308,13 @@
                         });
 
                         const data = await res.json();
-
                         if (!res.ok) throw new Error(data.detail || 'Login failed');
 
                         this.token = data.token;
                         localStorage.setItem('retail_iq_token', this.token);
                         this.isAuthenticated = true;
                         this.loadDashboardData();
+                        this.checkPipelineStatus();
                     } catch (e) {
                         this.authError = e.message;
                     }
@@ -288,6 +326,7 @@
                     this.isAuthenticated = false;
                     if(this.trendChartInst) this.trendChartInst.destroy();
                     if(this.promoChartInst) this.promoChartInst.destroy();
+                    if(this.pollInterval) clearInterval(this.pollInterval);
                 },
 
                 async apiGet(endpoint) {
@@ -299,6 +338,46 @@
                         throw new Error('Session expired');
                     }
                     return res.json();
+                },
+
+                async apiPost(endpoint) {
+                    const res = await fetch(endpoint, {
+                        method: 'POST',
+                        headers: { 'Authorization': `Bearer ${this.token}` }
+                    });
+                    if (res.status === 401) {
+                        this.logout();
+                        throw new Error('Session expired');
+                    }
+                    return res.json();
+                },
+
+                async triggerPipeline() {
+                    try {
+                        await this.apiPost('/api/pipeline/run');
+                        this.checkPipelineStatus();
+                    } catch(e) {
+                        console.error("Pipeline trigger failed", e);
+                    }
+                },
+
+                async checkPipelineStatus() {
+                    try {
+                        this.pipeline = await this.apiGet('/api/pipeline/status');
+
+                        if (this.pipeline.status === 'running') {
+                            if (!this.pollInterval) {
+                                this.pollInterval = setInterval(() => this.checkPipelineStatus(), 2000);
+                            }
+                        } else {
+                            if (this.pollInterval) {
+                                clearInterval(this.pollInterval);
+                                this.pollInterval = null;
+                            }
+                        }
+                    } catch(e) {
+                        console.error("Failed to check status", e);
+                    }
                 },
 
                 async loadDashboardData() {
@@ -328,31 +407,11 @@
                         data: {
                             labels,
                             datasets: [
-                                {
-                                    label: 'Actual Sales',
-                                    data: sales,
-                                    borderColor: '#2563eb',
-                                    tension: 0.1,
-                                    borderWidth: 2,
-                                    pointRadius: 0
-                                },
-                                {
-                                    label: 'Forecast',
-                                    data: forecast,
-                                    borderColor: '#f59e0b',
-                                    borderDash: [5, 5],
-                                    tension: 0.1,
-                                    borderWidth: 2,
-                                    pointRadius: 0
-                                }
+                                { label: 'Actual Sales', data: sales, borderColor: '#2563eb', tension: 0.1, borderWidth: 2, pointRadius: 0 },
+                                { label: 'Forecast', data: forecast, borderColor: '#f59e0b', borderDash: [5, 5], tension: 0.1, borderWidth: 2, pointRadius: 0 }
                             ]
                         },
-                        options: {
-                            responsive: true,
-                            interaction: { mode: 'index', intersect: false },
-                            plugins: { legend: { position: 'top', align: 'end' } },
-                            scales: { y: { beginAtZero: false } }
-                        }
+                        options: { responsive: true, interaction: { mode: 'index', intersect: false }, plugins: { legend: { position: 'top', align: 'end' } }, scales: { y: { beginAtZero: false } } }
                     });
                 },
 
@@ -370,23 +429,11 @@
                         data: {
                             labels,
                             datasets: [
-                                {
-                                    label: 'Baseline Baseline',
-                                    data: normal,
-                                    backgroundColor: '#404040'
-                                },
-                                {
-                                    label: 'Promo Lift',
-                                    data: promo,
-                                    backgroundColor: '#22c55e'
-                                }
+                                { label: 'Baseline', data: normal, backgroundColor: '#404040' },
+                                { label: 'Promo Lift', data: promo, backgroundColor: '#22c55e' }
                             ]
                         },
-                        options: {
-                            responsive: true,
-                            plugins: { legend: { position: 'top', align: 'end' } },
-                            scales: { x: { stacked: true }, y: { stacked: true, beginAtZero: true } }
-                        }
+                        options: { responsive: true, plugins: { legend: { position: 'top', align: 'end' } }, scales: { x: { stacked: true }, y: { stacked: true, beginAtZero: true } } }
                     });
                 },
 
