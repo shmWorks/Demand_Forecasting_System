@@ -11,6 +11,7 @@ Retail chains face a dual failure mode: overstocking perishable goods creates wa
 **Retail-IQ** is a multi-family panel regression forecasting system built to tackle this challenge. It analyzes daily sales across 54 stores and 33 product families using the [Corporación Favorita Store Sales dataset](https://www.kaggle.com/competitions/store-sales-time-series-forecasting) from Kaggle. Beyond mere forecasting, the system quantifies **promotional lift** and detects **cannibalization** across adjacent SKUs.
 
 ### Key Capabilities
+
 - **Robust Pipeline**: Highly optimized feature engineering using vectorized operations (O(N log K) time complexity for complex mappings).
 - **Dual Tracking**: Models continuous volume while evaluating promotional efficacy.
 - **From-Scratch Engineering**: Custom JAX-accelerated Gradient Descent Linear Regression baseline alongside standard advanced methods.
@@ -32,7 +33,7 @@ graph TD;
     E --> F;
 ```
 
-*See [`src/retail_iq/config.py`](src/retail_iq/config.py) for data path strictness and [`Learn_minmax_insights/01_System_Architecture.md`](Learn_minmax_insights/01_System_Architecture.md) for architectural invariants.*
+_See [`src/retail_iq/config.py`](src/retail_iq/config.py) for data path strictness and [`Learn_minmax_insights/01_System_Architecture.md`](Learn_minmax_insights/01_System_Architecture.md) for architectural invariants._
 
 ---
 
@@ -66,7 +67,8 @@ train, test, oil, holidays, transactions = preprocess_dates([train, test, oil, h
 # 3. Merge panel
 df_merged = merge_datasets(train, stores, oil, holidays, transactions)
 ```
-*[Explore preprocessing.py](src/retail_iq/preprocessing.py)*
+
+_[Explore preprocessing.py](src/retail_iq/preprocessing.py)_
 
 ### 3. Feature Engineering
 
@@ -85,7 +87,8 @@ df_features = (ffe
     .transform()
 )
 ```
-*[Explore features.py](src/retail_iq/features.py)*
+
+_[Explore features.py](src/retail_iq/features.py)_
 
 ### 4. Baseline Modeling (From Scratch)
 
@@ -105,7 +108,36 @@ model.fit(X_train, y_log)
 # Predict and inverse transform
 preds = np.expm1(model.predict(X_test))
 ```
-*[Explore models.py](src/retail_iq/models.py)*
+
+_[Explore models.py](src/retail_iq/models.py)_
+
+## 📊 Retail-IQ Dashboard
+
+The project includes a lightweight, real-time dashboard for monitoring sales trends and model performance.
+
+### 1. Prerequisites
+
+- **MongoDB**: Ensure MongoDB is running locally on `mongodb://localhost:27017/`.
+
+### 2. Seeding the Database
+
+Before running the dashboard for the first time, populate it with mock/pipeline data:
+
+```bash
+python -m dashboard.seed_db
+```
+
+_Note: This creates an admin user with credentials `admin` / `admin`._
+
+### 3. Launching the Application
+
+Run the Flask server from the project root:
+
+```bash
+python -m dashboard.app
+```
+
+The dashboard will be available at [http://127.0.0.1:5000](http://127.0.0.1:5000).
 
 ---
 
@@ -141,7 +173,7 @@ Retail-IQ/
 - [x] **Phase 6:** Advanced Modeling + Optuna Tuning
 - [x] **Phase 7:** Evaluation + SHAP Analysis
 - [x] **Phase 8:** Cannibalization & Lift Analysis
-- [ ] **Phase 9:** Finalization & Report Generation *(Current Target)*
+- [ ] **Phase 9:** Finalization & Report Generation _(Current Target)_
 
 ---
 
@@ -150,11 +182,13 @@ Retail-IQ/
 For collaborators entering the repository, there are critical architectural and logical blindspots to address:
 
 ### Critical Known Issues
+
 1. **Memory Blowup:** Current `add_lag_and_rolling()` operations create intermediate dataframe state replications. Investigating zero-copy methodologies is paramount.
 2. **Lag Feature Leakage Risk:** Any un-shifted rolling operations leak the current period. Strict guardrails must be preserved within the `FastFeatureEngineer` pipeline to prevent accidental leakage.
 3. **Oil Price Spurious Correlation:** Because the oil market closes on weekends, `ffill` pushes Friday prices to Saturday/Sunday. Given oil is a macro proxy, this introduces a lagged correlation risk.
 
 ### Future Optimization Directions
+
 - **Two-Stage Zero-Inflation Modeling:** Approximately 40-60% of our rows contain structural zero-sales. All current models (GD, XGB, LGBM) output continuous probabilities and systematically under-predict zero periods. **Action item:** Transition to a two-stage approach: A classifier predicting `P(sales=0)` followed by a regressor predicting `E(sales|sales>0)`.
 - **Dtype Bloat:** Memory compression pipeline needs to aggressively transition generic float64/int64 matrices into float32/int16 categories upon loading.
 
